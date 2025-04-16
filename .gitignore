@@ -1,0 +1,14 @@
+.idea
+.venv
+
+# ply files
+ply_generation/bag_files/
+ply_generation/ply_files_final/
+ply_generation/ply_files_other/
+ply_generation/trials_initial/initial_ply_files/
+ply_generation/trials_more/more_ply_files/
+ply_generation/trials_working/working_ply_files/
+ply_generation/trials_initial/hydroponic-garden.stl
+
+# bag files
+canopy_detection/new-captures/
