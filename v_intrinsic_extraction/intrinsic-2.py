@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import os
 
 # --- STEP 1: Load and process the image ---
-image_path = "/Users/valentinacampanelli/Documents/HRVIP/AruCo Tag/aruco_image5.jpg"
+image_path = "../canopy_detection/new-captures/plane_image_capture_2025-04-25T110918.png"
 assert os.path.exists(image_path), "Image file not found"
 
 image = cv2.imread(image_path)
@@ -17,6 +17,9 @@ parameters = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 corners, ids, _ = detector.detectMarkers(gray)
 
+print("corners here")
+print(corners, ids)
+
 # --- STEP 3: Define camera intrinsics (iPhone 12, portrait 3024x4032) ---
 camera_matrix = np.array([[2900, 0, 1512],
                           [0, 2900, 2016],
@@ -24,9 +27,34 @@ camera_matrix = np.array([[2900, 0, 1512],
 dist_coeffs = np.zeros((5, 1))
 marker_length = 0.05  # 5 cm
 
+def my_estimatePoseSingleMarkers(corners, marker_size, mtx, distortion):
+    '''
+    This will estimate the rvec and tvec for each of the marker corners detected by:
+       corners, ids, rejectedImgPoints = detector.detectMarkers(image)
+    corners - is an array of detected corners for each detected marker in the image
+    marker_size - is the size of the detected markers
+    mtx - is the camera matrix
+    distortion - is the camera distortion matrix
+    RETURN list of rvecs, tvecs, and trash (so that it corresponds to the old estimatePoseSingleMarkers())
+    '''
+    marker_points = np.array([[-marker_size / 2, marker_size / 2, 0],
+                              [marker_size / 2, marker_size / 2, 0],
+                              [marker_size / 2, -marker_size / 2, 0],
+                              [-marker_size / 2, -marker_size / 2, 0]], dtype=np.float32)
+    trash = []
+    rvecs = []
+    tvecs = []
+    
+    for c in corners:
+        nada, R, t = cv2.solvePnP(marker_points, c, mtx, distortion, False, cv2.SOLVEPNP_IPPE_SQUARE)
+        rvecs.append(R)
+        tvecs.append(t)
+        trash.append(nada)
+    return rvecs, tvecs, trash
+
 # --- STEP 4: Estimate pose of tag ---
 if ids is not None:
-    rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, marker_length, camera_matrix, dist_coeffs)
+    rvecs, tvecs, _ = my_estimatePoseSingleMarkers(corners, marker_length, camera_matrix, dist_coeffs)
     rvec = rvecs[0]
     tvec = tvecs[0]
 else:
@@ -40,7 +68,7 @@ transform[:3, 3] = tvec.flatten()
 print("Transformation matrix (AprilTag → Camera CSYS):\n", transform)
 
 # --- STEP 6: Load STL, scale from cm to m, and apply transform ---
-mesh = trimesh.load("/Users/valentinacampanelli/Documents/HRVIP/Hydroponic Garden/CAD_Hydrophonic System/StructureResvrLightBox.stl")
+mesh = trimesh.load("../cad_model/StructureResvrLightBox.STL")
 mesh.apply_scale(0.01)  # Convert cm → m
 mesh.apply_transform(transform)
 
