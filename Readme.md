@@ -1,22 +1,86 @@
-Make sure to have python = 3.9.13
+# Canopy & AprilTag Detection
 
-Make a virtual environment by running "python -m venv .venv"
+A collection of scripts for converting ROS bag files to images, detecting AprilTags, overlaying 3D STL models, and performing edge/background extraction.
 
-Activate virtual environment.
+---
 
-Once in virtual environment, run the command: "pip install -r requirements.txt"
+## 📋 Prerequisites
 
-Run the files by running the command: "python {filename}"
+* **Python**: 3.9.13
+* **Virtual environment**: `venv` (or your choice of environment manager)
 
-/canopy_detection
-bag_to_img.py => converts bag files to images
-combined-logic.py => will implement edge detection, and background extraction
-image_capture.py => captures image from camera
+---
 
-/april_tag_code
-april_tag_detector.py => detects april tag, draws bounding boxes and then displays coordinates realtime
-intrsinsic-1.py (Author: Valentina) => Finds camera intrinsics
-instrinsic-2.py (Author: Valentina) => Applies transformations and displays a 3d plot using Plotly
-stl_overlay.py => Detects april tag, maps stl object coordinate with the april tag center
+## 🛠️ Setup
 
+1. **Create a virtual environment**
 
+   ```bash
+   python3.9 -m venv .venv
+   ```
+
+2. **Activate**
+
+   * **macOS / Linux**
+
+     ```bash
+     source .venv/bin/activate
+     ```
+   * **Windows (PowerShell)**
+
+     ```powershell
+     .\.venv\Scripts\Activate.ps1
+     ```
+
+3. **Install dependencies**
+
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+---
+
+## ▶️ Usage
+
+Run any script with:
+
+```bash
+python <script_name>.py
+```
+
+Example:
+
+```bash
+python canopy_detection/image_capture.py
+```
+
+---
+
+## 📂 Project Structure
+
+```
+.
+├── canopy_detection
+│   ├── bag_to_img.py         # Convert ROS bag files to image sequence
+│   ├── combined-logic.py     # Edge detection + background extraction pipeline
+│   └── image_capture.py      # Capture live images from camera
+│
+└── april_tag_code
+    ├── april_tag_detector.py # Real‑time AprilTag detection & coordinate display
+    ├── intrinsic-1.py        # (Valentina) Compute camera intrinsics
+    ├── intrinsic-2.py        # (Valentina) Apply transforms & 3D Plotly visualization
+    └── stl_overlay.py        # Overlay STL model at AprilTag position
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/YourFeature`)
+3. Commit your changes (`git commit -m "Add your feature"`)
+4. Push to your branch (`git push origin feature/YourFeature`)
+5. Open a pull request
+
+---
