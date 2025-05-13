@@ -26,10 +26,10 @@ A collection of scripts for converting ROS bag files to images, detecting AprilT
      ```bash
      source .venv/bin/activate
      ```
-   * **Windows (PowerShell)**
+   * **Windows (CMD)**
 
      ```powershell
-     .\.venv\Scripts\Activate.ps1
+     .venv\Scripts\activate
      ```
 
 3. **Install dependencies**
@@ -74,6 +74,24 @@ python canopy_detection/image_capture.py
 ```
 
 ---
+
+## Example Outputs
+
+```
+
+### Canopy Detection
+![Canopy Line over Plants](images/canopy_line.png)
+
+### SAM Segmentation
+![Locally implemented segmentation](images/segmented_plants.png)
+
+### AprilTag + STL Overlay - 1
+![AprilTag overlay result](images/cad_overlay-1.png)
+
+### AprilTag + STL Overlay - 2
+![AprilTag overlay result](images/cad_overlay-2.png)
+
+```
 
 ## 🤝 Contributing
 
