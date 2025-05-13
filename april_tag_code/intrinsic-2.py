@@ -60,6 +60,7 @@ if ids is not None:
 else:
     raise ValueError("No AprilTags detected.")
 
+#Module 3 starts 
 # --- STEP 5: Convert to transformation matrix ---
 rotation_matrix, _ = cv2.Rodrigues(rvec)
 transform = np.eye(4)
@@ -67,10 +68,14 @@ transform[:3, :3] = rotation_matrix
 transform[:3, 3] = tvec.flatten()
 print("Transformation matrix (AprilTag → Camera CSYS):\n", transform)
 
+#Module 4 starts 
+
 # --- STEP 6: Load STL, scale from cm to m, and apply transform ---
 mesh = trimesh.load("../cad_model/StructureResvrLightBox.STL")
 mesh.apply_scale(0.01)  # Convert cm → m
 mesh.apply_transform(transform)
+
+#Module 5 starts (all for displayng tranformed CAD (mesh), april CSYS axes, Camera CSYS axes)
 
 # --- STEP 7: Extract vertices/faces for Plotly ---
 vertices = mesh.vertices
@@ -92,7 +97,7 @@ origin_cam = np.array([0, 0, 0])
 L = 0.05 * np.linalg.norm(mesh.extents)  # Axis length = 5% of mesh size
 print(f"STL size (meters): {mesh.extents}, Axis length: {L:.2f} m")
 
-# AprilTag CSYS (solid)
+# AprilTag CSYS (solid) to display csys of the tags and not only the center point
 tag_axes = [
     go.Scatter3d(x=[origin_tag[0], origin_tag[0] + rotation_matrix[0, 0]*L],
                  y=[origin_tag[1], origin_tag[1] + rotation_matrix[1, 0]*L],
