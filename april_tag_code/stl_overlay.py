@@ -11,7 +11,7 @@ import time
 # 1) PRE‑RENDER YOUR STL TO A TRANSPARENT SPRITE
 # -----------------------------------------------------------------------------
 SPRITE_SIZE    = 200                # px
-MESH_PATH      = '../cad_model/StructureResvrLightBox.STL'
+MESH_PATH      = '..\cad_model\StructureResvrLightBox_AprilTagOrigin.stl'
 PADDING_FACTOR = 1.1
 YFOV           = np.pi / 3.0       # 60°
 
@@ -66,7 +66,26 @@ pipeline = rs.pipeline()
 config   = rs.config()
 config.enable_stream(rs.stream.depth, 640,480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640,480, rs.format.bgr8, 30)
-pipeline.start(config)
+# pipeline.start(config)
+
+# 1) define your real‐world tag size (in meters)
+TAG_SIZE = 0.05
+
+# 2) grab the RealSense color stream intrinsics
+profile       = pipeline.start(config)
+color_profile = profile.get_stream(rs.stream.color) \
+                       .as_video_stream_profile()
+intr          = color_profile.get_intrinsics()
+
+# 3) build your camera matrix
+K = np.array([
+    [intr.fx,  0,       intr.ppx],
+    [0,        intr.fy, intr.ppy],
+    [0,        0,       1      ]
+])
+
+# 4) assume zero lens distortion
+dist_coeffs = np.zeros(4)
 
 detector = Detector(families='tag36h11', nthreads=4,
                     quad_decimate=1.0, refine_edges=1)
@@ -87,7 +106,13 @@ try:
 
         color_image = np.asanyarray(color_frame.get_data())
         gray        = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
-        tags        = detector.detect(gray)
+        tags = detector.detect(
+            gray,
+            estimate_tag_pose=True,
+            camera_params=[intr.fx, intr.fy, intr.ppx, intr.ppy],
+            tag_size=TAG_SIZE
+        )
+
 
         if tags:
             tag = tags[0]
@@ -97,6 +122,31 @@ try:
             cv2.polylines(color_image, [tag.corners.astype(int)], True,
                           (0,255,0), 2)
             cv2.circle(color_image, (int(cx),int(cy)), 5, (0,0,255), -1)
+
+            # ——— draw local XYZ axes at the tag center ———
+
+            axis_len = TAG_SIZE * 0.5
+            # 3D points: origin, X, Y, Z (Z negative to point “out” of tag)
+            pts_3d = np.float32([
+                [0,         0,          0        ],
+                [axis_len,  0,          0        ],  # X axis
+                [0,         axis_len,   0        ],  # Y axis
+                [0,         0,         -axis_len ]   # Z axis
+            ]).reshape(-1,3)
+
+            # rotation vector + translation vector from the tag detector
+            rvec, _ = cv2.Rodrigues(tag.pose_R)
+            tvec = tag.pose_t.reshape(3,1)
+
+            # project into pixel coordinates
+            imgpts, _ = cv2.projectPoints(pts_3d, rvec, tvec, K, dist_coeffs)
+            imgpts = imgpts.reshape(-1,2).astype(int)
+
+            origin = tuple(imgpts[0])
+            cv2.line(color_image, origin, tuple(imgpts[1]), (0,0,255), 2)  # X = red
+            cv2.line(color_image, origin, tuple(imgpts[2]), (0,255,0), 2)  # Y = green
+            cv2.line(color_image, origin, tuple(imgpts[3]), (255,0,0), 2)  # Z = blue
+
 
             # -----------------------------------------------------------------
             # ** BOTTOM‑LEFT OF SPRITE → TAG CENTER **

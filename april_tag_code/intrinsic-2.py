@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import os
 
 # --- STEP 1: Load and process the image ---
-image_path = "../canopy_detection/new-captures/plane_image_capture_2025-04-25T110918.png"
+image_path = "../canopy_detection/new-captures/plane_image_capture_2025-05-30T104002.png"
 assert os.path.exists(image_path), "Image file not found"
 
 image = cv2.imread(image_path)
@@ -21,8 +21,8 @@ print("corners here")
 print(corners, ids)
 
 # --- STEP 3: Define camera intrinsics (iPhone 12, portrait 3024x4032) ---
-camera_matrix = np.array([[2900, 0, 1512],
-                          [0, 2900, 2016],
+camera_matrix = np.array([[920, 0, 640],
+                          [0, 920, 360],
                           [0,    0,    1]], dtype=np.float32)
 dist_coeffs = np.zeros((5, 1))
 marker_length = 0.05  # 5 cm
@@ -71,7 +71,7 @@ print("Transformation matrix (AprilTag → Camera CSYS):\n", transform)
 #Module 4 starts 
 
 # --- STEP 6: Load STL, scale from cm to m, and apply transform ---
-mesh = trimesh.load("../cad_model/StructureResvrLightBox.STL")
+mesh = trimesh.load("..\cad_model\StructureResvrLightBox_AprilTagOrigin.stl")
 mesh.apply_scale(0.01)  # Convert cm → m
 mesh.apply_transform(transform)
 
