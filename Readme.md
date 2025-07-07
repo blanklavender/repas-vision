@@ -77,8 +77,6 @@ python canopy_detection/image_capture.py
 
 ## Example Outputs
 
-```
-
 ### Canopy Detection
 ![Canopy Line over Plants](images/canopy_line.png)
 
@@ -90,8 +88,6 @@ python canopy_detection/image_capture.py
 
 ### AprilTag + STL Overlay - 2
 ![AprilTag overlay result](images/cad_overlay-2.png)
-
-```
 
 ## 🤝 Contributing
 
