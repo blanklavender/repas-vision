@@ -158,10 +158,10 @@ HRVIP Vision Work/
 ## 📊 Example Outputs
 
 ### Transformed CAD Model in Open3D
-![Point Cloud and CAD model overlay](git_images/transformed_cad)
+![Point Cloud and CAD model overlay](git_images/transformed_cad.png)
 
 ### April tag detection and Pose estimation
-![Point Cloud and CAD model overlay](git_images/april_tag_pose)
+![Point Cloud and CAD model overlay](git_images/april_tag_pose.png)
 
 ### Canopy Detection
 ![Canopy Line over Plants](git_images/canopy_line.png)
