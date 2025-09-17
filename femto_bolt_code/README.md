@@ -112,7 +112,9 @@ Coordinate System Alignment → Open3D Visualization
 
 ### Virtual Environment Setup
 
-It is **strongly recommended** to use separate virtual environments for each camera system to avoid dependency conflicts. Open3D requires Python 3.11 for optimal compatibility.
+It is **strongly recommended** to use separate virtual environments for each camera system to avoid dependency conflicts. Open3D requires Python 3.11 or more for optimal compatibility.
+
+Follow instructions on pyorbbecsdk setup here: https://github.com/orbbec/pyorbbecsdk
 
 #### Create Virtual Environment (Python 3.11)
 ```bash

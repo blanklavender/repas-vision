@@ -45,7 +45,6 @@ pybind11-global==2.11.0
 pygame==2.6.1
 Pygments==2.19.2
 pynput==1.8.1
-pyorbbecsdk @ file:///C:/active-projects/HRVIP%20Vision%20Work/femto_bolt_code/pyorbbecsdk/scripts/pyorbbecsdk-2.0.13-cp39-cp39-win_amd64.whl#sha256=c12a48c4fe7ece3316a6cc13afe2edf173860815a63a09725f5ce6043cb7b8aa
 pywin32==311
 referencing==0.36.2
 requests==2.32.4
