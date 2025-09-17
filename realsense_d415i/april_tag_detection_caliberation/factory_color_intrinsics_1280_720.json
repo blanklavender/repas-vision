@@ -1,0 +1,17 @@
+{
+  "device_serial": "151322067775",
+  "width": 1280,
+  "height": 720,
+  "fx": 912.350341796875,
+  "fy": 911.7763061523438,
+  "ppx": 628.7836303710938,
+  "ppy": 348.9772644042969,
+  "coeffs": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "distortion_model": "distortion.inverse_brown_conrady"
+}

@@ -1,0 +1,31 @@
+.venv
+
+# bag files
+canopy_detection/new-captures/
+
+cad_model
+
+# SDK directories
+femto_bolt_code/pyorbbecsdk/
+
+# PLY files from hydroponic system captures (large files)
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114531/point_cloud_20250903_114531.ply
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114545/point_cloud_20250903_114545.ply
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114554/point_cloud_20250903_114554.ply
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114604/point_cloud_20250903_114604.ply
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114613/point_cloud_20250903_114613.ply
+femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114620/point_cloud_20250903_114620.ply
+
+# PLY files from four pose captures (large files)
+femto_bolt_code/scripts/four_pose_captures/capture_20250912_150022/point_cloud_20250912_150022.ply
+femto_bolt_code/scripts/four_pose_captures/capture_20250912_150054/point_cloud_20250912_150054.ply
+femto_bolt_code/scripts/four_pose_captures/capture_20250912_150125/point_cloud_20250912_150125.ply
+femto_bolt_code/scripts/four_pose_captures/capture_20250912_150202/point_cloud_20250912_150202.ply
+
+# PLY files from RealSense D415i testing scripts (large files)
+realsense_d415i/testing_scripts/aligned_outputs/pose 1/pc_20250808_142303.ply
+realsense_d415i/testing_scripts/aligned_outputs/pose 2/pc_20250808_142806.ply
+realsense_d415i/testing_scripts/aligned_outputs/pose 3/pc_20250808_143021.ply
+realsense_d415i/testing_scripts/not_aligned_outputs/pose 1/out_20250808_142429.ply
+realsense_d415i/testing_scripts/not_aligned_outputs/pose 2/out_20250808_142858.ply
+realsense_d415i/testing_scripts/not_aligned_outputs/pose 3/out_20250808_143101.ply
