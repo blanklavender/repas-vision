@@ -4,6 +4,8 @@
 canopy_detection/new-captures/
 
 cad_model
+captures/
+exports/
 
 # SDK directories
 femto_bolt_code/pyorbbecsdk/
