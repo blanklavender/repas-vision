@@ -510,8 +510,7 @@ def main():
                 if canopy_y is not None and coords_3d is not None:
                     X, Y, Z = coords_3d
                     print(f"\n✓ Successfully detected canopy at HD resolution")
-                    print(f"  3D: ({X:.3f}, {Y:.3f}, {Z:.3f}) meters")
-                    print(f"  y={canopy_y:.4f} m")
+                    print(f"  Y={Y:.4f} m")
                 else:
                     print("\n✗ Failed to detect canopy height or compute 3D coordinates")
             
