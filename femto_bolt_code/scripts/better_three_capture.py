@@ -45,7 +45,7 @@ ESC_KEY = 27
 COLOR_W, COLOR_H, COLOR_FPS = 1280, 720, 30
 DEPTH_W, DEPTH_H, DEPTH_FPS = 640, 576, 30
 
-OUT_DIR = Path('./captures_colorworld')
+OUT_DIR = Path('../../captures/captures_colorworld_stable')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ------------------------ Helpers ------------------------

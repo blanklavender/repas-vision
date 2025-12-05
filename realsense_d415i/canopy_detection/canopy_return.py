@@ -140,7 +140,7 @@ def canopy_level_mark(image):
         print("No plant pixels detected!")
         return None, None
 
-def draw_canopy_visualization(original_image, rotated_image, canopy_x, canopy_y):
+def draw_canopy_visualization(original_image, rotated_image, canopy_x, canopy_y, X, Y, Z):
     """Draw canopy line and point on both original and rotated images."""
     # Draw on rotated image
     rotated_vis = rotated_image.copy()
@@ -153,7 +153,7 @@ def draw_canopy_visualization(original_image, rotated_image, canopy_x, canopy_y)
     cv2.circle(rotated_vis, (canopy_x, canopy_y), 5, (255, 0, 0), -1)
     
     # Add text label
-    label = f"Canopy: ({canopy_x}, {canopy_y})"
+    label = f"Canopy: ({X:.3f}, {Y:.3f}, {Z:.3f})"
     cv2.putText(rotated_vis, label, (canopy_x + 10, canopy_y - 10), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     cv2.putText(rotated_vis, label, (canopy_x + 10, canopy_y - 10), 
@@ -232,28 +232,11 @@ def project_point_to_pixel(intrinsics, point_3d):
     return x, y
 
 def calculate_reprojection_error(intrinsics, original_pixel, point_3d):
-    """
-    Calculate reprojection error by projecting 3D point back to 2D and comparing
-    with the original pixel coordinates.
-    
-    Args:
-        intrinsics: Camera intrinsics object from RealSense
-        original_pixel: Tuple (x, y) of original pixel coordinates
-        point_3d: Tuple (X, Y, Z) of 3D coordinates
-    
-    Returns:
-        Dictionary containing reprojection error details
-    """
     orig_x, orig_y = original_pixel
-    
-    # Project 3D point back to 2D
     reproj_x, reproj_y = project_point_to_pixel(intrinsics, point_3d)
-    
-    # Calculate pixel-wise differences
+
     dx = reproj_x - orig_x
     dy = reproj_y - orig_y
-    
-    # Calculate Euclidean distance (reprojection error)
     error = np.sqrt(dx**2 + dy**2)
     
     return {
@@ -281,17 +264,17 @@ def print_reprojection_error(error_info):
     print(f"Euclidean Error:    {error_info['error_euclidean']:.4f} pixels")
     
     # Interpretation
-    if error_info['error_euclidean'] < 1.0:
-        status = "✓ EXCELLENT (< 1 pixel)"
-    elif error_info['error_euclidean'] < 2.0:
-        status = "✓ GOOD (< 2 pixels)"
-    elif error_info['error_euclidean'] < 5.0:
-        status = "⚠ ACCEPTABLE (< 5 pixels)"
-    else:
-        status = "✗ POOR (≥ 5 pixels) - Check calibration!"
+    # if error_info['error_euclidean'] < 1.0:
+    #     status = "✓ EXCELLENT (< 1 pixel)"
+    # elif error_info['error_euclidean'] < 2.0:
+    #     status = "✓ GOOD (< 2 pixels)"
+    # elif error_info['error_euclidean'] < 5.0:
+    #     status = "⚠ ACCEPTABLE (< 5 pixels)"
+    # else:
+    #     status = "✗ POOR (≥ 5 pixels) - Check calibration!"
     
-    print(f"Status:             {status}")
-    print("="*60 + "\n")
+    # print(f"Status:             {status}")
+    # print("="*60 + "\n")
 
 def get_depth_at_pixel(depth_frame, x, y, window_size=5):
     """
@@ -361,14 +344,6 @@ def process_canopy_detection(color_image, depth_frame, color_intrinsics, timesta
         canopy_y_rotated, canopy_x_rotated = canopy_level_mark(colored_mask)
 
         if canopy_y_rotated is not None:
-            print("Step 5: Creating visualization...")
-            # canopy_visualization = draw_canopy_visualization(
-            #     color_image, 
-            #     rotated_image, 
-            #     canopy_x_rotated, 
-            #     canopy_y_rotated
-            # )
-            
             # # Save the visualization image
             # vis_filename = f"new-captures/canopy_visualization_{timestamp}.png"
             # cv2.imwrite(vis_filename, canopy_visualization)
@@ -405,6 +380,17 @@ def process_canopy_detection(color_image, depth_frame, color_intrinsics, timesta
                     (orig_x, orig_y), 
                     depth_value
                 )
+
+                print("Step 5: Creating visualization...")
+                canopy_visualization = draw_canopy_visualization(
+                    color_image, 
+                    rotated_image, 
+                    canopy_x_rotated,
+                    canopy_y_rotated,
+                    X,
+                    Y,
+                    Z
+                )
                 
                 # # Step 9: Calculate and print reprojection error
                 # print("Step 9: Validating 3D reconstruction...")
@@ -415,24 +401,24 @@ def process_canopy_detection(color_image, depth_frame, color_intrinsics, timesta
                 # )
                 # print_reprojection_error(error_info)
                 
-                # Save simple y-coordinate only txt file
-                simple_txt_filename = f"new-captures/canopy_y_{timestamp}.txt"
-                with open(simple_txt_filename, 'w') as f:
-                    f.write(f"{Y:.4f}\n")
+                # Save y-coordinate only txt file
+                txt_filename = f"src/camera_sensor/camera_z_data/camera_z.txt"
+                with open(txt_filename, 'w') as f:
+                    f.write(f"{Y:.4f}")
 
-                return canopy_y_rotated, (X, Y, Z)
+                return canopy_y_rotated, (X, Y, Z), canopy_visualization
             else:
                 print("Failed to get valid depth value at canopy point")
-                return canopy_y_rotated, None
+                return canopy_y_rotated, None, None
         else:
             print("Failed to detect canopy height")
-            return None, None
+            return None, None, None
     
     except Exception as e:
         print(f"An error occurred during processing: {e}")
         import traceback
         traceback.print_exc()
-        return None, None
+        return None, None, None
 
 def main():
     pipeline = rs.pipeline()
