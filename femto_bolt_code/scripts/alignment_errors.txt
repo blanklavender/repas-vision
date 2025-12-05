@@ -1,0 +1,20 @@
+Point-to-Surface Distance Analysis
+Point Cloud (Ground Truth) to CAD Model
+================================================================================
+
+Total Points Analyzed: 150647
+
+Statistics:
+  Mean:     9.066434 mm
+  Median:   3.421936 mm
+  Std Dev:  23.863880 mm
+  Min:      0.000015 mm
+  Max:      218.198395 mm
+  RMSE:     25.528120 mm
+
+Percentiles:
+  50th: 3.421936 mm
+  75th: 6.695892 mm
+  90th: 10.868329 mm
+  95th: 24.278167 mm
+  99th: 127.630031 mm
