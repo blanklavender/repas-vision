@@ -15,6 +15,8 @@ femto_bolt_code/pyorbbecsdk-whl/
 my_object
 6dof_export/
 
+EfficientSAM/
+
 # PLY files from hydroponic system captures (large files)
 femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114531/point_cloud_20250903_114531.ply
 femto_bolt_code/scripts/hydroponic_system_captures/capture_20250903_114545/point_cloud_20250903_114545.ply

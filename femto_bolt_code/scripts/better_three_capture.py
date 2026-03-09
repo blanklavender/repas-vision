@@ -25,6 +25,12 @@ Dependencies
 - OpenCV (cv2) for visualization & PNG IO
 - numpy
 
+Notes:
+69.4
+79.4
+
+Actual canopy height: 26-27 cm
+
 """
 import os
 import json
@@ -45,7 +51,7 @@ ESC_KEY = 27
 COLOR_W, COLOR_H, COLOR_FPS = 1280, 720, 30
 DEPTH_W, DEPTH_H, DEPTH_FPS = 640, 576, 30
 
-OUT_DIR = Path('../../captures/captures_colorworld_stable')
+OUT_DIR = Path('../../captures/03-04_FLORA_captures')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ------------------------ Helpers ------------------------

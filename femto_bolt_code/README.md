@@ -119,7 +119,7 @@ Follow instructions on pyorbbecsdk setup here: https://github.com/orbbec/pyorbbe
 #### Create Virtual Environment (Python 3.11)
 ```bash
 # Create virtual environment with Python 3.11
-python3.11 -m venv .venv
+py -3.11 -m venv .venv
 
 # Activate virtual environment
 # On Windows:

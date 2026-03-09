@@ -263,11 +263,11 @@ def main():
     # ============================================
     
     # Path to point cloud (captured data - ground truth)
-    point_cloud_file = "../../captures/captures_colorworld_stable/capture_20251121_162722/ground_truth_scene/cropped_camframe_20251121_162722.ply"
+    point_cloud_file = "../../captures/femto_bolt/captures_colorworld_stable/capture_20251121_162722/ground_truth_scene/cropped_camframe_20251121_162722.ply"
     
     # # Path to transformed CAD model
-    cad_mesh_file = "../../captures/captures_colorworld_stable/capture_20251121_162722/transformed_cad/cad_icp_refined_20251121_162722.ply"
-    # cad_mesh_file = "../../captures/captures_colorworld_stable/capture_20251121_162722/transformed_cad/cad_transformed_20251121_162722.ply"
+    cad_mesh_file = "../../captures/femto_bolt/captures_colorworld_stable/capture_20251121_162722/transformed_cad/cad_icp_refined_20251121_162722.ply"
+    # cad_mesh_file = "../../captures/femto_bolt/captures_colorworld_stable/capture_20251121_162722/transformed_cad/cad_transformed_20251121_162722.ply"
     
     # Unit conversion
     UNIT_SCALE = 1000.0  # meters to millimeters
@@ -353,12 +353,12 @@ def main():
     create_color_scale_reference(max_error_used, unit_label=UNIT_LABEL)
     
     # Save colored point cloud
-    output_pcd_file = "../../captures/captures_colorworld_stable/capture_20251121_162722/error_analysis/alignment_quality_colored.ply"
+    output_pcd_file = "../../captures/femto_bolt/captures_colorworld_stable/capture_20251121_162722/error_analysis/alignment_quality_colored.ply"
     o3d.io.write_point_cloud(output_pcd_file, point_cloud_colored)
     print(f"\nColored point cloud saved to: {output_pcd_file}")
     
     # Save error data
-    output_data_file = "../../captures/captures_colorworld_stable/capture_20251121_162722/error_analysis/alignment_errors.txt"
+    output_data_file = "../../captures/femto_bolt/captures_colorworld_stable/capture_20251121_162722/error_analysis/alignment_errors.txt"
     with open(output_data_file, 'w', encoding='utf-8') as f:
         f.write("Point-to-Surface Distance Analysis\n")
         f.write("Point Cloud (Ground Truth) to CAD Model\n")
