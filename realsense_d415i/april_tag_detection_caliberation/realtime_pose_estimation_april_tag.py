@@ -6,7 +6,7 @@ import time
 import os
 
 # === Camera intrinsics & distortion ===
-# Checkerboard calibration values
+# Checkerboard calibration values - THESE ARE WRONG FOR THIS RESOLUTION, MUST BE UPDATED
 K = np.array([
     [605.2845686,   0.0,        309.95995203],
     [0.0,           605.44233933, 229.79166863],
@@ -22,7 +22,7 @@ TAG_SIZE = 0.0303   # updated tag size in meters
 # —– Start RealSense (color only)
 pipeline = rs.pipeline()
 cfg      = rs.config()
-cfg.enable_stream(rs.stream.color, 640,  480, rs.format.bgr8, 30)
+cfg.enable_stream(rs.stream.color, 1280,  720, rs.format.bgr8, 6)
 pipeline.start(cfg)
 
 # AprilTag detector

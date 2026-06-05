@@ -1,193 +1,230 @@
-# Computer Vision System for Hydroponic System Detection and Plant Canopy Detection using April Tags 
+# REPAS Vision
 
-A comprehensive computer vision system designed for indoor hydroponic environment monitoring, featuring dual-camera support with advanced 3D pose estimation, point cloud generation, and CAD model visualization capabilities.
+Computer vision system for hydroponic plant monitoring using AprilTag-based pose estimation, canopy height detection, 3D reconstruction, and plant segmentation. Built around two camera systems: Orbbec Femto Bolt (ToF) and Intel RealSense D415i (stereo).
 
-## 🎯 Project Overview
+## Folder Structure
 
-This repository contains two complete computer vision systems built around different camera technologies:
+### `femto_bolt_code/scripts/` — Femto Bolt scripts
 
-- **Femto Bolt Camera System**: Time-of-Flight depth sensing with high-resolution color imaging
-- **RealSense D415i Stereo Camera System**: Stereo depth sensing with IMU integration
+**AprilTag detection and pose estimation:**
+- `april_tag_detector_solvepnp.py` — Real-time AprilTag detection with solvePnP pose estimation
+- `april_tag_detector_ToF.py` — AprilTag detection using ToF depth data
+- `april_tag_id_detector.py` — Detects and prints AprilTag IDs from camera feed
+- `april_tag_bundle_view.py` — Visualizes multi-tag bundle pose in Open3D
+- `april_tag_3d_point.py` — Extracts 3D coordinates of AprilTag corners using depth
+- `april_tag_point_picker.py` — Interactive tool to pick points on AprilTag images
 
-Both systems provide real-time AprilTag detection, 6DOF pose estimation, point cloud generation, and CAD model visualization for hydroponic monitoring applications.
+**CAD overlay and visualization:**
+- `final_view.py` — Visualizes point cloud with AprilTag-derived coordinate frame
+- `final_view_with_cad.py` — Overlays CAD model onto point cloud using AprilTag pose
+- `view_cad_two_tags.py` — CAD overlay using two-tag bundle for pose
+- `mpa_final_view_tag_bundle_with_cad.py` — Multi-pose-average tag bundle with CAD overlay
+- `mpe_final_view_tag_bundle_with_cad.py` — Multi-pose-estimation tag bundle with CAD overlay
+- `mpa_final_view_with_export.py` — Multi-pose-average view with PLY export
+- `origin_viz.py` — Visualizes coordinate frame origin in 3D
+- `origin_viz_2.py` — Alternate coordinate frame origin visualization
+- `view_point_cloud.py` — Simple Open3D point cloud viewer
 
----
+**ICP and point cloud registration:**
+- `icp_cad_model.py` — ICP alignment of captured point cloud to CAD model
+- `mpa_icp.py` — Multi-pose-average followed by ICP refinement
+- `mpa_icp_export.py` — Multi-pose-average ICP with PLY export
+- `export_6dof.py` — Exports 6DOF transformation as PLY
+- `manual_pose_verify.py` — Manual verification of estimated poses
 
-## 🚀 Key Capabilities
+**Error analysis:**
+- `point_correspondence_error.py` — Computes point correspondence error between captures
+- `visualize_error.py` — Visualizes point-to-mesh distance error as heatmap
 
-### 🔍 **AprilTag Detection & Pose Estimation**
-- Real-time AprilTag detection using tag36h11 family
-- 6DOF pose estimation with solvePnP
-- Multiple tag detection and tracking
-- Robust corner refinement and validation
+**Capture and data processing:**
+- `rgbd_viewer.py` — Real-time RGB-D stream viewer
+- `create_masked_ply.py` — Creates distance-masked point clouds from RGB-D
+- `generate_point_cloud.py` — Generates PLY point cloud from color + depth image pair
+- `custom_reader.py` — Custom reader for Femto Bolt data files
+- `run_custom.py` — Runs custom pipeline configurations
+- `ply_to_stl.py` — Converts PLY files to STL format
+- `supported_stream_list.py` — Lists all supported stream modes on the Femto Bolt
+- `fetch_intrinsics.py` — Fetches camera intrinsics from the Femto Bolt SDK
+- `alignment_test.py` — Verifies depth-to-color alignment quality with edge overlays
 
-### 📊 **3D Data Capture & Processing**
-- RGB-D data capture with timestamped storage
-- Point cloud generation (PLY format)
-- Aligned depth and color streams
-- Distance-based masking and filtering
+**Calibration:**
+- `checkerboard_callibration.py` — Checkerboard-based camera calibration
+- `calibration_stereo.py` — Stereo calibration between IR and RGB sensors
+- `callibration_capture.py` — Captures synchronized COLOR + IR pairs for calibration
 
-### 🎨 **CAD Model Integration**
-- STL/PLY model loading and visualization
-- Automatic coordinate system alignment
-- Real-time 3D rendering with Open3D
-- Configurable scaling and rotation
+### `femto_bolt_code/scripts/capture/` — Session-based capture tools
 
-### 📐 **Camera Calibration**
-- Factory intrinsics extraction
-- Checkerboard calibration support
-- Distortion correction
-- Multi-resolution calibration
+- `capture_session.py` — Burst capture of color + depth at each turntable rotation angle
+- `capture_no_bloat.py` — Minimal live preview with single-frame save
+- `better_three_capture.py` — Simultaneous RGB, depth, and PLY capture
+- `generate_ply.py` — Generates PLY point clouds from a capture session's frame pairs
+- `post-filters.py` — Offline depth-gradient mask testing on captured data
+- `filter-test-pointcloud.py` — Visualizes gradient mask effect as point clouds
+- `hw_filter_test.py` — Tests hardware noise removal filter settings
+- `edge_overlay_check.py` — Depth-to-color alignment diagnostic via edge overlay
+- `version_checker.py` — Prints pyorbbecsdk version
 
----
+### `femto_bolt_code/scripts/calibration_test/` — D2C alignment experiments
 
-## 📷 Camera Systems
+- `calibration_param_test.py` — Builds point cloud using manual D2C calibration (bypasses SDK AlignFilter)
+- `capture_pairs.py` — Captures paired IR + RGB for stereo calibration
+- `capture_test_raw.py` — Raw capture for calibration testing
+- `align_parameters.py` — Tests stereo calibration alignment parameters
 
-### 🔵 **Femto Bolt ToF Camera System**
+### `femto_bolt_code/scripts/canopy_detector/` — Canopy height detection
 
-**Hardware Specifications:**
-- **Sensor**: Time-of-Flight (ToF) depth sensor
-- **Chosen Resolution**: 1280x720 color @ 30fps, 640x480 depth @ 30fps
-- **Range**: 0.3m - 3.0m
-- **FOV**: 69° x 55° (H x V)
+- `canopy_script_img_based.py` — Canopy height using EfficientSAM segmentation + bounding box top edge
+- `canopy_script_depth_based.py` — Canopy height using EfficientSAM + top 20% depth points with outlier rejection
+- `canopy_utils.py` — Interactive utility for selecting prompts, verifying tags, and checking depth
 
-**Key Scripts & Features:**
-- **`april_tag_detector_solvepnp.py`**: Real-time AprilTag detection and pose estimation
-- **`better_three_capture.py`**: Simultaneous multi-file RGB-D-PLY capture system
-- **`final_view_with_cad.py`**: Complete CAD model integration and visualization
-- **`checkerboard_callibration.py`**: Camera calibration using checkerboard patterns
-- **`rgbd_viewer.py`**: Real-time RGB-D stream viewer
+### `femto_bolt_code/scripts/canopy_detector/automation/` — Batch canopy processing
 
-**Captured Sample Data:**
-- **6 hydroponic system captures**: Real-world system data (ready for AprilTag detection)
-- **4 validation captures**: Potted plant in 4 rotations (useful for experimenting combining point clouds)
-- **Factory & Manual calibration data**: Pre-calibrated intrinsics and extrinsics
-- NOTE: Ply files greater than 100 mb will not exist here because of gihtub restrictions
+- `process_all_captures.py` — Runs canopy detection on all capture subfolders
+- `create_prompts_batch.py` — Generates template prompt JSON files for batch processing
+- `compile_results.py` — Compiles all canopy height JSON results into a single CSV
 
-### 🔴 **RealSense D415i Stereo Camera System**
+### `femto_bolt_code/scripts/leaf_segmentation/` — Leaf segmentation
 
-**Hardware Specifications:**
-- **Sensor**: Stereo depth with IMU
-- **Chosen Resolution**: 640x480 color @ 30fps, 640x480 depth @ 30fps
-- **Range**: 0.16m - 10.0m
-- **FOV**: 69.4° x 42.5° (H x V)
+- `leaf_semgent_using_vitt.py` — Two-stage leaf segmentation: whole plant mask then individual leaf masks using EfficientSAM
 
-**Key Scripts & Features:**
-- **`realtime_pose_estimation_april_tag.py`**: Real-time AprilTag pose estimation
-- **`capture_aligned_all.py`**: Aligned RGB-D data and PLY capture
-- **`capture_aligned_pointcloud.py`**: Specialized point cloud generation
-- **`vis_tool_solvepnp.py`**: solvePnP pose estimation visualization
-- **`checkerboard_caliberation.py`**: Camera calibration system
+### `femto_bolt_code/scripts/TDFS/` — Turntable 3D reconstruction (TSDF fusion)
 
-**Captured Data:**
-- **Aligned outputs**: Test data with RGB, depth, and PLY files
-- **Canopy detection captures**: Specialized plant monitoring data
-- **Factory calibration data**: Pre-calibrated intrinsics and extrinsics
+- `main_script.py` — Point cloud fusion and TSDF mesh reconstruction from multi-angle captures
+- `april_tag_pivot_generator.py` — Finds turntable pivot point using AprilTag detections across frames
+- `find_pivot.py` — Pivot point finder using depth-derived 3D corners
+- `optimize_pivot.py` — Optimizes pivot X/Z to minimize alignment error
+- `transform_json.py` — Generates NerfStudio-compatible transforms.json from captures
+- `transform_json_by_motion.py` — Generates transforms.json using inter-frame motion estimation
+- `background_masking_test.py` — Tests depth-based background masking for object isolation
+- `batch_process_masking.py` — Batch applies background masking across a capture session
+- `debug_2_view_test.py` — Debug: fuses two views to verify rotation alignment
+- `debug_angle.py` — Debug: tests rotation angles for alignment correctness
+- `debug_ply.py` — Debug: visualizes intermediate PLY outputs
+- `transform_test_debug.py` — Debug: step-by-step transform verification with PLY output
 
----
+### `femto_bolt_code/scripts/foundation_pose_localization/` — Foundation pose
 
-## 🛠️ Setup Instructions
+- `6dof_icp_export.py` — ICP-based 6DOF pose export
+- `hs_isolation/april_tag_bg_removal_pl.py` — AprilTag-guided background removal for hydroponic system isolation
 
-**⚠️ Important**: Each camera system requires a separate virtual environment with Python 3.11 for optimal Open3D compatibility.
+### `femto_bolt_code/flora/` — SAM3 integration
 
-### Quick Setup
-1. **Navigate to the desired camera system directory**
-2. **Create and activate virtual environment** (see individual READMEs for details)
-3. **Install dependencies** from requirements.txt
-4. **Run the desired scripts**
+- `sam3_depth_to_pointcloud.py` — Segments objects using SAM3 text/box prompts, projects masks to 3D, exports colored PLY point clouds
+- `sam3-repo/` — Cloned SAM3 repository (Facebook Research)
 
-### Detailed Setup
-For complete setup instructions, virtual environment configuration, and dependency management, please refer to the individual README files:
+### `realsense_d415i/april_tag_detection_caliberation/` — RealSense AprilTag and calibration
 
-- **Femto Bolt System**: See [`femto_bolt_code/README.md`](femto_bolt_code/README.md)
-- **RealSense D415i System**: See [`realsense_d415i/README.md`](realsense_d415i/README.md)
+- `realtime_pose_estimation_april_tag.py` — Real-time AprilTag pose estimation with RealSense
+- `april_tag_detection_image.py` — AprilTag detection from saved images
+- `checkerboard_caliberation.py` — Checkerboard camera calibration for RealSense
+- `fetch_factory_intrinsic.py` — Fetches factory intrinsics from RealSense device
+- `fetch_factory_extrinsic.py` — Fetches factory extrinsics from RealSense device
 
----
+### `realsense_d415i/capture_scripts/` — RealSense capture
 
-## 📂 Project Structure
+- `capture_aligned_all.py` — Captures aligned RGB, depth, and PLY simultaneously
+- `capture_aligned_pointcloud.py` — Captures aligned point clouds
+- `distance_masking_on_ply.py` — Applies distance-based masking to PLY files
+- `visualize_ply.py` — Visualizes PLY point clouds in Open3D
 
-```
-HRVIP Vision Work/
-├── femto_bolt_code/              # Femto Bolt ToF camera system
-│   ├── scripts/                  # Main application scripts
-│   │   ├── calibration_parameters/  # Camera calibration data
-│   │   ├── four_pose_captures/      # Validation data (4 rotations)
-│   │   └── hydroponic_system_captures/  # Production data (6 captures)
-│   └── README.md                 # Detailed setup and usage guide
-│
-├── realsense_d415i/              # RealSense D415i stereo camera system
-│   ├── april_tag_detection_caliberation/  # Detection and calibration
-│   ├── capture_scripts/          # Data capture and processing
-│   ├── testing_scripts/          # Testing and validation
-│   ├── vis_tool/                 # Visualization tools
-│   └── README.md                 # Detailed setup and usage guide
-│
-├── cad_model/                    # 3D CAD models for visualization
-│   ├── Structure2.PLY           # Main hydroponic structure model
-│   └── StructureResvrLightBox_AprilTagOrigin.stl
-│
-└── git_images/                   # Example outputs and documentation
-    ├── canopy_line.png          # Canopy detection example
-    └── segmented_plants.png     # Plant segmentation example
-```
+### `realsense_d415i/canopy_detection/` — RealSense canopy detection
 
----
+- `canopy_return.py` — Canopy height detection using depth data
+- `canopy_return_upgraded.py` — Improved canopy detection with better filtering
+- `combined-logic.py` — Combined canopy detection pipeline
+- `image_capture.py` — Captures images for canopy detection
+- `bag_to_img.py` — Extracts images from RealSense .bag recording files
 
-## 🎯 Use Cases & Applications
+### `realsense_d415i/testing_scripts/` — RealSense testing
 
-### **Hydroponic System Monitoring**
-- Real-time plant growth tracking
-- 3D structure visualization
-- Automated pose estimation for robotic systems
-- Point cloud analysis for plant health assessment
+- `test_camera_status.py` — Tests RealSense camera connection status
+- `supported_stream_list.py` — Lists supported stream configurations
+- `color_640x480_live_streaming.py` — Live color stream preview at 640x480
+- `visualize_point_cloud.py` — Point cloud visualization
+- `three_pose_vertical_translation_validation.py` — Validates vertical translation across three poses
 
-### **Research & Development**
-- Multi-camera system comparison
-- Calibration validation and testing
-- 3D reconstruction and analysis
-- CAD model integration for design validation
+### `realsense_d415i/vis_tool/` — RealSense visualization
 
-### **Educational & Training**
-- Computer vision algorithm implementation
-- 3D data processing and visualization
-- Camera calibration techniques
-- AprilTag detection and pose estimation
+- `vis_tool_solvepnp.py` — SolvePnP pose visualization tool
+- `vis_tool_april_tag_pose_validaiton.py` — AprilTag pose validation visualization
+- `vis_tool_not_working_ref.py` — Reference file (non-functional, kept for notes)
 
----
+### `captures/` — Captured data
 
-## 📊 Example Outputs
+- `realsense/` — RealSense captures (canopy images, depth snapshots, .bag files, canopy detection pipeline outputs)
+- `femto_bolt/` — Femto Bolt captures (hydroponic system data, four-pose validation)
+- `03-04_FLORA_captures/` through `2026-04-24_*` — Turntable capture sessions at various dates and lighting conditions
+- `canopy_test_captures_*/` — Canopy height test captures at different plant heights (33.4cm to 62cm)
 
-### Transformed CAD Model in Open3D
-![Point Cloud and CAD model overlay](git_images/transformed_cad.png)
+### `captures/realsense/canopy-detection/` — Canopy detection pipeline
 
-### April tag detection and Pose estimation
-![Point Cloud and CAD model overlay](git_images/april_tag_pose.png)
+- `canopy_height_pipeline.py` — End-to-end canopy height pipeline using AprilTags + EfficientSAM
+- `canopy_utils.py` — Interactive utility for prompt selection and tag verification
 
-### Canopy Detection
-![Canopy Line over Plants](git_images/canopy_line.png)
+### `cad_model/` — CAD models (mm scale)
 
-### SAM Segmentation
-![Locally implemented segmentation](git_images/segmented_plants.png)
+STL, PLY, and OBJ files of the hydroponic structure for point cloud overlay and error analysis.
 
+### `cad_model_in_m/` — CAD models (meter scale)
 
+Same structure model in meters for pipelines that work in metric units.
 
+### `EfficientSAM/` — EfficientSAM repository
 
----
+Cloned EfficientSAM repo used for plant segmentation in canopy detection and leaf segmentation pipelines.
 
-## 🚀 Quick Start Guide
+### `git_images/` — Documentation images
 
-### For Femto Bolt Users:
+Example output images used in this README.
+
+## Environment Setup
+
+Both camera systems require **Python 3.11** and separate virtual environments.
+
+### Femto Bolt virtual environment
+
 ```bash
 cd femto_bolt_code
-# Follow setup instructions in femto_bolt_code/README.md
-python scripts/april_tag_detector_solvepnp.py
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
 ```
 
-### For RealSense D415i Users:
+Key packages: `pyorbbecsdk`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`
+
+You also need the Orbbec SDK installed on your system. Download from the Orbbec developer portal and follow their installation instructions. `pyorbbecsdk` wraps the native SDK, so the Orbbec drivers must be installed for the camera to be detected.
+
+### RealSense virtual environment
+
 ```bash
 cd realsense_d415i
-# Follow setup instructions in realsense_d415i/README.md
-python april_tag_detection_caliberation/realtime_pose_estimation_april_tag.py
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
 ```
 
----
+Key packages: `pyrealsense2`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`
+
+Intel RealSense SDK 2.0 must be installed. The `pyrealsense2` pip package wraps the native SDK.
+
+### EfficientSAM setup
+
+EfficientSAM is used by the canopy detection and leaf segmentation scripts. It is already cloned in `EfficientSAM/`.
+
+```bash
+# From within the femto_bolt or realsense venv:
+pip install torch torchvision   # CUDA version recommended for GPU acceleration
+```
+
+The scripts load EfficientSAM by adding `EfficientSAM/` to `sys.path` at runtime. No separate install is needed — just make sure `torch` and `torchvision` are in your active venv. Model weights are downloaded automatically on first run.
+
+### SAM3 setup
+
+SAM3 is used by `femto_bolt_code/flora/sam3_depth_to_pointcloud.py`. The repo is cloned at `femto_bolt_code/flora/sam3-repo/`.
+
+```bash
+# From within the realsense venv (which already has torch):
+pip install -e femto_bolt_code/flora/sam3-repo
+```
+
+SAM3 requires `torch`, `torchvision`, `timm`, `huggingface_hub`, and other ML dependencies. The RealSense `requirements.txt` already includes these. Model weights are downloaded from HuggingFace which reuires authentication on first use.
