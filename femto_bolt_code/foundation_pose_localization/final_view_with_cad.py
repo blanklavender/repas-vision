@@ -12,11 +12,11 @@ import open3d as o3d
 from pupil_apriltags import Detector
 
 # -------------------- CONFIG --------------------
-COLOR_PATH = Path(r"./hydroponic_system_captures/capture_20250903_114620/color_20250903_114620.png")
-PLY_PATH   = Path(r"./hydroponic_system_captures/capture_20250903_114620/point_cloud_20250903_114620.ply")  # optional
+COLOR_PATH = Path(r"../../captures/femto_bolt/hydroponic_system_captures/capture_20250903_114620/color_20250903_114620.png")
+PLY_PATH   = Path(r"../../captures/femto_bolt/hydroponic_system_captures/capture_20250903_114620/point_cloud_20250903_114620.ply")  # optional
 
 # Intrinsics JSON: lean {"fx","fy","cx","cy","width","height"} or master {"color_intrinsics":{...}}
-INTRINSICS_JSON = Path(r"./calibration_parameters/factory_color_intrinsics_2025-09-08T143506.json")
+INTRINSICS_JSON = Path(r"../../femto_bolt_code/scripts/calibration_parameters/factory_color_intrinsics_2025-09-08T143506.json")
 
 # AprilTag pose from detector
 FAMILY     = "tag36h11"
@@ -30,7 +30,7 @@ GRID   = 0.10
 VOXEL  = 0.0
 
 # CAD placement options
-CAD_PLY                 = Path(r"../../cad_model/Structure2.PLY")
+CAD_PLY                 = Path(r"../../cad_model/old_ply/Structure2.PLY")
 CAD_UNITS_TO_METERS     = 0.001         # 0.001 if CAD is in millimeters
 CAD_PRE_ROT_DEG_ZYX     = (0.0, 0.0, 0.0)  # (Z, Y, X) degrees BEFORE placement
 CAD_CENTER_ON_ORIGIN    = False         # keep False if you want CAD's local (0,0,0) on the tag
