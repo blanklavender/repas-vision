@@ -16,7 +16,7 @@ Usage:
     python canopy_m1_sam3.py --live
     python canopy_m1_sam3.py --folder /path/to/capture_YYYYMMDD_HHMMSS
 
-python .\canopy_detection_using_sam3.py --folder ..\canopy_detection\captures\capture_20260602_121019
+python .\canopy_detection_using_sam3_esam.py --folder ..\canopy_detection\captures\capture_20260602_121019
 """
 
 import argparse
