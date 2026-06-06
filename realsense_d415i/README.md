@@ -131,7 +131,7 @@ py -3.11 -m venv .venv
 source .venv/bin/activate
 
 # Verify Python version
-python --version  # Should show Python 3.11.x
+python --version  # Should show at least Python 3.11.x
 ```
 
 #### Install Dependencies

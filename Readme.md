@@ -201,7 +201,28 @@ cd realsense_d415i
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install -r requirements.txt
+git clone https://github.com/yformer/EfficientSAM.git
+git clone https://github.com/facebookresearch/sam3.git
 ```
+
+Try running canopy_detection_old/canopy_img_based.py to make sure efficientSAM is working.
+Next try running sam3
+For that enter sam3_canopy_detection folder and then run: python sam3_test.py
+You may encounter torch and torchvision error.
+
+Use this command: 
+```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+pip install huggingface_hub
+hf auth login
+```
+
+Run 
+```bash
+python .\sam3_test.py
+```
+Sam3 should now start donwloading weights
+
 
 Key packages: `pyrealsense2`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`
 
