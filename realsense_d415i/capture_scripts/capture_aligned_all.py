@@ -257,8 +257,8 @@ while True:
 
     if key == ord('e'):
         ts = time.strftime("%Y%m%d_%H%M%S")
-        ply = f'pc_{ts}.ply'
-        img = f'rgb_{ts}.png'
+        ply = f'session_captures/pc_{ts}.ply'
+        img = f'session_captures/rgb_{ts}.png'
         points.export_to_ply(ply, mapped)
         cv2.imwrite(img, color_image)
         print(f"[INFO] Saved PLY → {ply}")
@@ -266,9 +266,9 @@ while True:
 
     if key == ord('f'):
         ts = time.strftime("%Y%m%d_%H%M%S")
-        cv2.imwrite(f"rgb_{ts}.png",        color_image)
-        cv2.imwrite(f"depth_raw_{ts}.png", depth_image)
-        cv2.imwrite(f"depth_cm_{ts}.png",  depth_colormap)
+        cv2.imwrite(f"session_captures/rgb_{ts}.png",        color_image)
+        cv2.imwrite(f"session_captures/depth_raw_{ts}.png", depth_image)
+        cv2.imwrite(f"session_captures/depth_cm_{ts}.png",  depth_colormap)
         print("[INFO] Snapshots saved.")
 
     if key in (27, ord('q')) \
