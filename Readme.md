@@ -190,7 +190,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Key packages: `pyorbbecsdk`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`
+Key packages: `pyorbbecsdk`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`, `matplotlib`
 
 You also need the Orbbec SDK installed on your system. Download from the Orbbec developer portal and follow their installation instructions. `pyorbbecsdk` wraps the native SDK, so the Orbbec drivers must be installed for the camera to be detected.
 
@@ -213,16 +213,15 @@ You may encounter torch and torchvision error.
 Use this command: 
 ```bash
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-pip install huggingface_hub
+pip install huggingface_hub matplotlib
 hf auth login
 ```
 
 Run 
 ```bash
-python .\sam3_test.py
+python .\sam3_test.py ..\canopy_detection_old\test_images\color_frame.png 
 ```
-Sam3 should now start donwloading weights
-
+Sam3 should now start donwloading weights and run with the test
 
 Key packages: `pyrealsense2`, `open3d`, `opencv-python`, `pupil_apriltags`, `numpy`
 

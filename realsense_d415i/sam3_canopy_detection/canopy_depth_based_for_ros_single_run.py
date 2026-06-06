@@ -8,7 +8,7 @@ canopy height; the scale-corrected above-base value is written to OUTPUT_TXT
 for the ROS side to read. Out-of-bounds values blank the file.
 
 Usage:
-    python canopy_depth_based_for_ros.py
+    python canopy_depth_based_for_ros_single_run.py
 """
 
 import os
