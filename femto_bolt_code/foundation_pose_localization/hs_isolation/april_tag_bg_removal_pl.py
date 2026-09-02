@@ -11,15 +11,15 @@ from pupil_apriltags import Detector
 
 # =========================== CONFIG ===========================
 # Inputs
-COLOR_PATH = Path(r"../../captures/captures_colorworld_stable/capture_20251121_162722/color_20251121_162722.png")
-PLY_PATH   = Path(r"../../captures/captures_colorworld_stable/capture_20251121_162722/masked_pointcloud_20251121_162722.ply")
-DEPTH_PATH = Path(r"../../captures/captures_colorworld_stable/capture_20251121_162722/aligned_depth_raw_20251121_162722.png")
-INTRINSICS_JSON = Path(r"./calibration_parameters/factory_color_intrinsics_2025-09-08T143506.json")
+COLOR_PATH = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\color_20251121_162722.png")
+PLY_PATH   = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\point_cloud_20251121_162722.ply")
+DEPTH_PATH = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\aligned_depth_raw_20251121_162722.png")
+INTRINSICS_JSON = Path(r"C:\Users\quartz\02_projects\repas-vision\femto_bolt_code\scripts\calibration_parameters\factory_color_intrinsics_2025-09-08T143506.json")
 
 # Outputs
-EXPORT_PLY_PATH      = Path("../../captures/captures_colorworld_stable/capture_20251121_162722/final_crop/cropped_camframe_20251121_162722.ply")
-EXPORT_PLY_YUP_PATH  = Path("../../captures/captures_colorworld_stable/capture_20251121_162722/final_crop/cropped_yup_20251121_162722.ply")
-EXPORT_META_JSON     = Path("../../captures/captures_colorworld_stable/capture_20251121_162722/final_crop/cropped_meta_20251121_162722.json")
+EXPORT_PLY_PATH      = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light/0831_validation_test/cropped_camframe_20251121_162722.ply")
+EXPORT_PLY_YUP_PATH  = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light/0831_validation_test/cropped_yup_20251121_162722.ply")
+EXPORT_META_JSON     = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light/0831_validation_test/cropped_meta_20251121_162722.json")
 WRITE_Y_UP_VERSION   = False
 WRITE_ASCII          = False
 COMPRESS_PLY         = False
@@ -29,7 +29,7 @@ EXPORT_PLY_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # AprilTag settings
 FAMILY     = "tag36h11"
-TAG_SIZE_M = 0.0293
+TAG_SIZE_M = 0.035
 TAG_IDS    = [9, 16]
 ANCHOR_ID  = 9
 

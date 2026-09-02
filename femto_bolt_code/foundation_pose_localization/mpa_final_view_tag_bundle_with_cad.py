@@ -13,15 +13,15 @@ from pupil_apriltags import Detector
 # =========================================================
 #                     CONFIG
 # =========================================================
-COLOR_PATH = Path(r"./new_test_captures/capture_20251031_155407/color_20251031_155407.png")
-DEPTH_NPY  = Path(r"./new_test_captures/capture_20251031_155407/aligned_depth_m_20251031_155407.npy")
-PLY_PATH   = Path(r"./new_test_exports/point_cloud_20251031_155407/cropped_camframe.ply")
-INTRINSICS_JSON = Path(r"./calibration_parameters/factory_color_intrinsics_2025-09-08T143506.json")
+COLOR_PATH = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\color_20251121_162722.png")
+DEPTH_NPY  = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\aligned_depth_m_20251121_162722.npy")
+PLY_PATH   = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light/0831_validation_test/cropped_camframe_20251121_162722.ply")
+INTRINSICS_JSON = Path(r"C:\Users\quartz\02_projects\repas-vision\femto_bolt_code\scripts\calibration_parameters\factory_color_intrinsics_2025-09-08T143506.json")
 
 FAMILY       = "tag36h11"
 TAG_IDS      = [9, 16]
 CAD_ANCHOR_ID= 16
-TAG_SIZE_M   = 0.0293
+TAG_SIZE_M   = 0.035
 CENTER_WIN   = 5
 
 AXES   = 0.05
@@ -29,7 +29,7 @@ SPHERE = 0.003
 GRID   = 0.10
 VOXEL  = 0.0
 
-CAD_PLY                 = Path(r"../../cad_model/StructureTotal-v2.PLY")
+CAD_PLY                 = Path(r"C:\Users\quartz\02_projects\repas-vision\cad_model\StructureOnly.PLY")
 CAD_UNITS_TO_METERS     = 0.001
 CAD_ADJUSTMENT_ROT_ZYX  = (0.0, -1, 0.0)
 
