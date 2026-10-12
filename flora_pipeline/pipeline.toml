@@ -1,0 +1,54 @@
+# Flora pipeline settings, read by run_pipeline.py (python run_pipeline.py --help).
+#
+# Every key in [capture], [clean] and [pick] is handed to that step's script as
+# --key-with-dashes value; true -> the flag is given, false -> it is left out; a list ->
+# several values. See README.md for what each one does. Relative paths are relative to
+# this file. Override any key for one run with  --set section.key=value
+
+[paths]
+captures_root = "../captures/femto_bolt/flora_unit"     # new captures are created here
+points_file   = "../captures/femto_bolt/flora_unit/picked_points.txt"   # rewritten every run
+name          = "plant"     # capture folder: <name>_<MM-DD>_deg_<step>_speed_<speed>
+
+[python]
+# interpreter for each step; "" = the one running run_pipeline.py
+capture = ""
+clean   = ""
+pick    = ""
+
+[capture]                   # flora_turntable_control_scripts/sweep_capture.py
+port       = "COM7"         # turntable serial port (Linux: /dev/ttyACM0)
+step       = 10             # degrees between shots
+speed      = 5              # turntable speed 1-9
+settle     = 3.0            # seconds to wait after each move before the shot
+total      = 360            # degrees to sweep
+warmup     = 3.0            # camera auto-exposure warm-up, seconds
+home_after = true           # re-home after the sweep (plant back as in the first shot)
+no_ply     = true           # skip the SDK point clouds (not used downstream)
+no_preview = false          # true = no preview windows
+
+[clean]                     # femto_bolt_code/3dr_scripts/sam3_data_cleaning.py
+prompts             = ["yellow cylinder", "green plant"]
+confidence          = 0.5
+z_min               = 0.30  # metres from the camera
+z_max               = 0.45
+x_min               = -0.25
+x_max               = 0.25
+y_min               = -0.25
+y_max               = 0.25
+grad_max            = 20.0  # mm per px
+occlusion_tol_mm    = 40.0
+occlusion_window_px = 24.0
+mask_erode          = 2
+sor_neighbors       = 20
+sor_std             = 2.0
+force               = false
+
+[pick]                      # femto_bolt_code/3dr_scripts/tag_pose_pick.py
+max_obliquity   = 55.0
+tag_size_mm     = 24.0
+voxel_mm        = 1.0
+base_percentile = 0.5
+at_deg          = ""        # e.g. "90,180": also print coordinates at these turntable angles
+restitch        = false
+no_view         = false

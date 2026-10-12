@@ -1,29 +1,35 @@
 #!/usr/bin/env python3
 """
-Flora Inspection Station -- automated turntable sweep with the Femto Bolt.
+Flora Inspection Station -- automated turntable sweep with the Femto Bolt, ONE shot per stop.
 
-Rotates the turntable in fixed increments and, at every stop, saves:
+Rotates the turntable in fixed increments; at every stop it waits --settle seconds (the
+camera queue is drained meanwhile, so nothing shot mid-motion is kept), then saves the
+newest synchronised frame:
 
     color_000_ang000.png    8-bit BGR, 1280x720
-    depth_000_ang000.png    16-bit, D2C-aligned to the colour frame
-    cloud_000_ang000.ply    binary xyzrgb, from the SDK's PointCloudFilter
-    manifest.csv            index / commanded angle / true angle / files / time
-    intrinsics.json         fx fy cx cy, depth scale, units -- written once
+    depth_000_ang000.png    16-bit, D2C-aligned to the colour frame (depth_scale mm per unit)
+    cloud_000_ang000.ply    binary xyzrgb from the SDK's PointCloudFilter (skip with --no-ply)
+    manifest.csv            index / commanded angle / true angle / files / time, rewritten
+                            after every stop so an aborted sweep still has a valid one
+    intrinsics.json         colour intrinsics, depth scale, units -- written once
+    camera_params.json      native depth + colour intrinsics/distortion and the
+                            depth->colour extrinsic -- written once
 
-Matches the Orbbec Viewer settings: D2C(SW) alignment, colour 1280x720 30fps
-MJPG, depth 640x576 30fps Y16, frame sync on, xyzrgb clouds.
+(Earlier versions also saved a burst of raw depth + IR frames per stop for averaging;
+averaging made no real difference, so that is gone. Old captures keep working downstream.)
 
-    python sweep_capture.py COM5 --step 5 --speed 5 --out captures/plant_01
+Matches the Orbbec Viewer settings: D2C(SW) alignment, colour 1280x720 30fps MJPG,
+depth 640x576 30fps Y16, frame sync on, xyzrgb clouds.
 
-    python sweep_capture.py COM7 --step 10 --speed 5 --out captures/yellow_pot_08-25_deg_10_speed_5 --settle 3
+    python sweep_capture.py COM7 --step 10 --speed 5 --settle 3 --out captures/yellow_pot_10-06_deg_10_speed_5
+    python sweep_capture.py /dev/ttyACM0 --step 10 --out <path> --no-ply --no-preview --home-after
 
 Keys (with a preview window focused):  q / ESC = abort.
 
-Requires turntable.py in the same folder.
+Requires turntable.py in the same folder and flora_pipeline/flora_lib (repository root).
 """
 
 import argparse
-import csv
 import json
 import sys
 import time
@@ -40,6 +46,9 @@ from pyorbbecsdk import (
 )
 
 from turntable import Turntable, TurntableError
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "flora_pipeline"))
+from flora_lib import dataset  # noqa: E402  (shared capture layout)
 
 ESC = 27
 COLOR_W, COLOR_H, COLOR_FPS = 1280, 720, 30
@@ -108,6 +117,37 @@ def get_depth_scale(depth_frame):
         return 1.0
 
 
+def _intr(intr):
+    return dict(fx=float(intr.fx), fy=float(intr.fy), cx=float(intr.cx), cy=float(intr.cy),
+                width=int(intr.width), height=int(intr.height))
+
+
+def _dist(d):
+    """OBCameraDistortion -> dict plus OpenCV order [k1 k2 p1 p2 k3 k4 k5 k6]."""
+    out = {k: float(getattr(d, k)) for k in ("k1", "k2", "k3", "k4", "k5", "k6", "p1", "p2")}
+    out["opencv_order"] = [out[k] for k in ("k1", "k2", "p1", "p2", "k3", "k4", "k5", "k6")]
+    return out
+
+
+def get_camera_params(raw_depth_frame, color_frame, depth_scale):
+    """Native (un-aligned) depth + colour calibration, straight from the stream
+    profiles (same calls as the SDK's coordinate_transform example)."""
+    dp = raw_depth_frame.get_stream_profile().as_video_stream_profile()
+    cp = color_frame.get_stream_profile().as_video_stream_profile()
+    ext = dp.get_extrinsic_to(cp)
+    return {
+        "note": ("depth_intrinsic/distortion describe the native (un-aligned) depth "
+                 "sensor. X_color = R @ X_depth + t, t in mm."),
+        "depth_intrinsic": _intr(dp.get_intrinsic()),
+        "depth_distortion": _dist(dp.get_distortion()),
+        "color_intrinsic": _intr(cp.get_intrinsic()),
+        "color_distortion": _dist(cp.get_distortion()),
+        "depth_to_color": {"R": np.array(ext.rot, dtype=float).reshape(3, 3).tolist(),
+                           "t_mm": np.array(ext.transform, dtype=float).reshape(3).tolist()},
+        "depth_scale_mm_per_unit": float(depth_scale),
+    }
+
+
 # --------------------------------------------------------------------------
 # point cloud -- SDK PointCloudFilter, same path the Orbbec Viewer uses
 # --------------------------------------------------------------------------
@@ -127,7 +167,9 @@ def count_valid_points(pc_frame):
 # --------------------------------------------------------------------------
 
 def grab_settled(pipe, align, seconds, preview=True):
-    """Drain the queue for `seconds`, return the newest complete aligned set.
+    """Drain the queue for `seconds`, return the newest complete aligned set as
+    (colour BGR, aligned depth u16, aligned depth frame, aligned frameset,
+    raw depth frame, raw colour frame).
 
     This matters: the pipeline keeps buffering while the table is turning, so
     without draining you save a frame shot mid-motion.
@@ -140,14 +182,15 @@ def grab_settled(pipe, align, seconds, preview=True):
             if time.time() > deadline + 5.0:
                 raise RuntimeError("no frames from the camera for 5 s")
             continue
+        raw_d, raw_c = frames.get_depth_frame(), frames.get_color_frame()
         aligned = align.process(frames)
-        if not aligned:
+        if not aligned or raw_d is None or raw_c is None:
             continue
         fs = aligned.as_frame_set()
         c, d = fs.get_color_frame(), fs.get_depth_frame()
         if c is None or d is None:
             continue
-        last = (color_to_bgr(c), depth_to_u16(d), d, aligned)
+        last = (color_to_bgr(c), depth_to_u16(d).copy(), d, aligned, raw_d, raw_c)
 
         if preview:
             show(last[0], last[1], "settling")
@@ -173,29 +216,38 @@ def true_deg(step, count):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Turntable sweep capture on the Femto Bolt")
+    p = argparse.ArgumentParser(description="Turntable sweep capture on the Femto Bolt, one shot per stop",
+                                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("port", help="COM5 on Windows, /dev/ttyACM0 on Ubuntu")
-    p.add_argument("--step", type=int, default=5, help="degrees between captures")
+    p.add_argument("--step", type=int, default=10, help="degrees between captures")
     p.add_argument("--speed", type=int, default=5, help="turntable speed 1-9")
-    p.add_argument("--out", default=None, help="output directory")
-    p.add_argument("--total", type=int, default=360, help="degrees to sweep")
-    p.add_argument("--settle", type=float, default=2.0,
+    p.add_argument("--out", default=None, help="output directory (default captures/sweep_<time>)")
+    p.add_argument("--settle", type=float, default=3.0,
                    help="seconds to let the leaves stop moving after each step")
+    p.add_argument("--total", type=int, default=360, help="degrees to sweep")
     p.add_argument("--warmup", type=float, default=3.0,
                    help="seconds of auto-exposure warm-up before the first shot")
+    p.add_argument("--home-after", action="store_true",
+                   help="re-home the turntable after the sweep, so the plant stands as in the first shot")
     p.add_argument("--decimate", type=int, default=1,
                    help="PointCloudFilter decimation factor; 2 quarters the point count")
     p.add_argument("--units", choices=["mm", "m"], default="mm",
-                   help="point cloud units. mm is the SDK/Viewer default")
+                   help="SDK point cloud units. mm is the SDK/Viewer default")
     p.add_argument("--ascii-ply", action="store_true",
                    help="ASCII PLY instead of binary (much larger, human readable)")
-    p.add_argument("--no-ply", action="store_true", help="skip point clouds")
+    p.add_argument("--no-ply", action="store_true", help="skip the SDK point clouds (not used downstream)")
     p.add_argument("--no-preview", action="store_true", help="headless")
     args = p.parse_args()
+    if not 1 <= args.speed <= 9:
+        p.error("--speed must be 1-9")
+    if args.step == 0:
+        p.error("--step must not be 0")
 
     preview = not args.no_preview
-    n_pos = args.total // args.step
+    n_pos = args.total // abs(args.step)
     out = Path(args.out or f"captures/sweep_{datetime.now():%Y%m%d_%H%M%S}")
+    if (out / dataset.MANIFEST).exists():
+        sys.exit(f"{out} already holds a capture (manifest.csv) -- choose another --out")
     out.mkdir(parents=True, exist_ok=True)
 
     if Context().query_devices().get_count() == 0:
@@ -238,10 +290,10 @@ def main():
                  f"Is the Arduino IDE Serial Monitor or another script holding it?")
 
     print(f"Warming up the camera for {args.warmup:.0f} s ...")
-    rows, intr, scale, units_applied = [], None, None, "mm"
+    rows, scale, units_applied, status = [], None, "mm", 0
 
     try:
-        color, depth, dframe, _ = grab_settled(pipe, align, args.warmup, preview)
+        _, _, dframe, *_ = grab_settled(pipe, align, args.warmup, preview)
 
         # Units. The SDK emits millimetres by default, which is what the Viewer
         # exports. set_position_data_scaled() rescales that; we ask the depth
@@ -260,20 +312,21 @@ def main():
                 pass   # default is already mm
 
         print(f"\n{n_pos} positions, {args.step} deg apart "
-              f"({true_deg(args.step, 1):.4f} deg true). "
-              f"Clouds in {units_applied}. Writing to {out}\n")
+              f"({true_deg(args.step, 1):.4f} deg true), settle {args.settle:g} s. Writing to {out}\n")
 
         for i in range(n_pos):
             commanded = (i * args.step) % 360
             real = true_deg(args.step, i)
 
-            color, depth, dframe, aligned = grab_settled(pipe, align, args.settle, preview)
+            # one shot: the newest frame once the table has been still for --settle s
+            color, depth, dframe, aligned, raw_d, raw_c = grab_settled(pipe, align, args.settle, preview)
 
-            if intr is None:
-                intr = get_intrinsics(dframe)
+            if i == 0:
+                cam = get_camera_params(raw_d, raw_c, scale)
+                (out / dataset.CAMERA_PARAMS).write_text(json.dumps(cam, indent=2))
                 (out / "intrinsics.json").write_text(json.dumps({
                     "note": "colour intrinsics; depth is D2C-aligned to colour",
-                    "intrinsics": intr,
+                    "intrinsics": get_intrinsics(dframe),
                     "depth_scale_mm_per_unit": scale,
                     "point_cloud_units": units_applied,
                     "point_cloud_source": "pyorbbecsdk PointCloudFilter, RGB_POINT",
@@ -283,10 +336,10 @@ def main():
                     "align_mode": "D2C software (AlignFilter -> COLOR_STREAM)",
                 }, indent=2))
 
-            stem = f"{i:03d}_ang{commanded:03d}"
-            cname, dname = f"color_{stem}.png", f"depth_{stem}.png"
-            cv2.imwrite(str(out / cname), color)
-            cv2.imwrite(str(out / dname), depth)
+            stem = dataset.stem(i, commanded)
+            cname, dname = dataset.color_name(stem), dataset.depth_name(stem)
+            if not (cv2.imwrite(str(out / cname), color) and cv2.imwrite(str(out / dname), depth)):
+                raise RuntimeError(f"could not write {out / cname} / {dname}")
 
             pname, npts, ntotal = "", 0, 0
             if pcf is not None:
@@ -307,8 +360,9 @@ def main():
                 "valid_points": npts, "total_points": ntotal,
                 "timestamp": datetime.now().isoformat(timespec="seconds"),
             })
-            print(f"[{i + 1:3d}/{n_pos}] {commanded:3d} deg "
-                  f"(true {real:7.3f})  {npts:>8d} valid pts")
+            dataset.write_manifest(out, rows)
+            print(f"[{i + 1:3d}/{n_pos}] {commanded:3d} deg (true {real:7.3f})  "
+                  f"{int((depth > 0).sum()):>8d} valid depth px" + (f", {npts} cloud pts" if pcf else ""))
 
             if preview:
                 show(color, depth, f"saved {commanded} deg")
@@ -317,17 +371,19 @@ def main():
             if i + 1 < n_pos:
                 tt.move(args.step)
 
+        if args.home_after:
+            print("\nre-homing the turntable ...")
+            tt.home()
+
     except KeyboardInterrupt:
         print("\naborted")
+        status = 130
     except Exception as e:
         print(f"\nstopped: {e}")
+        status = 1
     finally:
         if rows:
-            with open(out / "manifest.csv", "w", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=list(rows[0]))
-                w.writeheader()
-                w.writerows(rows)
-            print(f"\n{len(rows)} positions -> {out}")
+            print(f"\n{len(rows)}/{n_pos} positions -> {out}")
             print(f"total true rotation: {rows[-1]['true_deg']:.3f} deg")
         try:
             tt.close()
@@ -335,6 +391,7 @@ def main():
             pass
         cv2.destroyAllWindows()
         pipe.stop()
+    sys.exit(status)
 
 
 if __name__ == '__main__':

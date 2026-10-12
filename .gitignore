@@ -33,6 +33,11 @@ femto_bolt_code/3dr_scripts/TDFS/debug_4view_colored.ply
 femto_bolt_code/3dr_scripts/TDFS/debug_4view_realcolor.ply
 femto_bolt_code/3dr_scripts/TDFS/alignment_quality_colored.ply
 
+## PYTHON CACHE FILES
+femto_bolt_code/3dr_scripts/__pycache__
+flora_turntable_control_scripts/__pycache__
+flora_pipeline/flora_lib/__pycache__
+
 
 ## REALSENSE FILES
 

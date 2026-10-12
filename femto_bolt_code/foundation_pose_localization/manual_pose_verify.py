@@ -13,10 +13,10 @@ import open3d as o3d
 from pupil_apriltags import Detector
 
 # -------------------- CONFIG --------------------
-COLOR_PATH = Path(r"../../captures/captures_colorworld_stable/capture_20251121_162722/color_20251121_162722.png")
-PLY_PATH   = Path(r"../../captures/captures_colorworld_stable/capture_20251121_162722/final_crop/cropped_camframe_20251121_162722.ply")
+COLOR_PATH = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\color_20251121_162722.png")
+PLY_PATH   = Path(r"C:\Users\quartz\02_projects\repas-vision\captures\femto_bolt\hs_captures_20251121_diagonal_tags\capture_20251121_162722_no_light\ground_truth_scene\cropped_camframe_20251121_162722.ply")
 
-INTRINSICS_JSON = Path(r"./calibration_parameters/factory_color_intrinsics_2025-09-08T143506.json")
+INTRINSICS_JSON = Path(r"C:\Users\quartz\02_projects\repas-vision\femto_bolt_code\scripts\calibration_parameters\factory_color_intrinsics_2025-09-08T143506.json")
 
 # AprilTag settings
 FAMILY     = "tag36h11"

@@ -1,0 +1,8 @@
+# Flora pipeline -- Python 3.11 packages (versions as tested on the capture PC, Oct 2026).
+# Install PyTorch (CUDA build), pyorbbecsdk and SAM3 separately -- see README.md "Setup".
+numpy==1.26.4
+opencv-python==4.11.0.86
+open3d==0.19.0
+pupil-apriltags==1.0.4.post11
+pyserial==3.5
+pillow
