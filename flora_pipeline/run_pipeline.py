@@ -3,8 +3,9 @@
 run_pipeline.py  --  run the Flora pipeline end to end, or any part of it.
 
     capture   flora_turntable_control_scripts/sweep_capture.py   turntable sweep, one shot per stop
-    clean     femto_bolt_code/3dr_scripts/sam3_data_cleaning.py  SAM3 prompts + depth thresholds
-    pick      femto_bolt_code/3dr_scripts/tag_pose_pick.py       tag-pose stitch + 3D point picking
+    register  femto_bolt_code/3dr_scripts/tag_register.py        AprilTag shot poses + turntable axis
+    clean     femto_bolt_code/3dr_scripts/sam3_data_cleaning.py  SAM3 prompts + crop around the axis
+    pick      femto_bolt_code/3dr_scripts/tag_pose_pick.py       stitch + 3D point picking
 
 Every step is its own script, run as a separate process with the settings from
 pipeline.toml, and talks to the next one only through files in the capture folder
@@ -12,11 +13,11 @@ pipeline.toml, and talks to the next one only through files in the capture folde
 The picked points (camera coordinates, mm) end up in [paths] points_file, which is
 emptied at the start of the pick step and rewritten after every pick.
 
-    python run_pipeline.py                                   # capture -> clean -> pick
+    python run_pipeline.py                                   # capture -> register -> clean -> pick
     python run_pipeline.py --name basil --step 10 --speed 5 --settle 3 --port COM7
-    python run_pipeline.py --capture-dir ../captures/femto_bolt/flora_unit/plant_10-06_deg_10_speed_5 --from clean
+    python run_pipeline.py --capture-dir ../captures/femto_bolt/flora_unit/plant_10-06_deg_10_speed_5 --from register
     python run_pipeline.py --latest --only pick              # pick again on the newest capture
-    python run_pipeline.py --latest --from clean --set clean.z_max=0.5 --set clean.force=true
+    python run_pipeline.py --latest --from clean --set clean.axis_radius=0.07 --set clean.force=true
     python run_pipeline.py --dry-run                         # print the commands only
 """
 
@@ -33,6 +34,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 STEPS = {
     "capture": REPO / "flora_turntable_control_scripts" / "sweep_capture.py",
+    "register": REPO / "femto_bolt_code" / "3dr_scripts" / "tag_register.py",
     "clean": REPO / "femto_bolt_code" / "3dr_scripts" / "sam3_data_cleaning.py",
     "pick": REPO / "femto_bolt_code" / "3dr_scripts" / "tag_pose_pick.py",
 }
@@ -53,7 +55,7 @@ def load_config(path, overrides):
         key, sep, value = item.partition("=")
         section, dot, name = key.strip().partition(".")
         if not (sep and dot and name):
-            sys.exit(f"--set {item!r}: expected section.key=value, e.g. clean.z_max=0.5")
+            sys.exit(f"--set {item!r}: expected section.key=value, e.g. clean.axis_radius=0.07")
         cfg.setdefault(section, {})[name] = parse_value(value.strip())
     return cfg
 
@@ -92,7 +94,7 @@ def latest_capture(root):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Flora pipeline: capture -> clean -> pick",
+    ap = argparse.ArgumentParser(description="Flora pipeline: capture -> register -> clean -> pick",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--config", default=str(HERE / "pipeline.toml"), help="settings file")
     ap.add_argument("--from", dest="start", choices=ORDER, default="capture", help="first step to run")
@@ -120,7 +122,7 @@ def main():
                  f"paths.points_file={args.points_file!r}" if args.points_file else None]
     cfg_path = Path(args.config).resolve()
     cfg = load_config(cfg_path, [s.replace("'", '"') for s in shortcuts if s] + args.set)
-    for sec in ("paths", "python", "capture", "clean", "pick"):
+    for sec in ("paths", "python", *ORDER):
         cfg.setdefault(sec, {})
     base = cfg_path.parent
     root = resolve(base, cfg["paths"].get("captures_root", "."))
@@ -131,7 +133,7 @@ def main():
         sys.exit("--from comes after --to: nothing to run")
     if "capture" in steps:
         if args.capture_dir or args.latest:
-            sys.exit("the capture step makes a NEW capture folder; drop --capture-dir/--latest or start --from clean")
+            sys.exit("the capture step makes a NEW capture folder; drop --capture-dir/--latest or start --from register")
         capture = new_capture_dir(root, cfg)
     elif args.capture_dir:
         capture = Path(args.capture_dir).resolve()
@@ -149,6 +151,7 @@ def main():
     commands = {
         "capture": [interpreter("capture"), str(STEPS["capture"]), str(cfg["capture"].get("port", "")),
                     "--out", str(capture), *flags(cfg["capture"], skip=("port",))],
+        "register": [interpreter("register"), str(STEPS["register"]), str(capture), *flags(cfg["register"])],
         "clean": [interpreter("clean"), str(STEPS["clean"]), str(capture), *flags(cfg["clean"])],
         "pick": [interpreter("pick"), str(STEPS["pick"]), str(capture), "--points-file", str(points_file),
                  *flags(cfg["pick"])],

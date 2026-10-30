@@ -7,6 +7,7 @@ Capture-folder layout: the contract between the pipeline steps.
     color_<stem>.png          sweep_capture.py   8-bit BGR 1280x720
     depth_<stem>.png          sweep_capture.py   16-bit depth, D2C-aligned to the colour image
     cloud_<stem>.ply          sweep_capture.py   SDK point cloud (optional, not used downstream)
+    registration.json         tag_register.py    tag poses per shot (T_shot_to_ref), turntable axis
     mask/mask_<stem>.png      sam3_data_cleaning SAM3 union mask (prompts), colour resolution
     rgb/color_<stem>.png      sam3_data_cleaning colour image, black outside the mask
     depth/depth_<stem>.png    sam3_data_cleaning aligned depth, 0 outside the cleaned mask
@@ -29,6 +30,7 @@ import numpy as np
 MANIFEST = "manifest.csv"
 CAMERA_PARAMS = "camera_params.json"
 CLEANING = "cleaning.json"
+REGISTRATION = "registration.json"
 MASK_DIR, RGB_DIR, DEPTH_DIR, CLOUD_DIR = "mask", "rgb", "depth", "pointcloud"
 MANIFEST_COLUMNS = ["index", "commanded_deg", "true_deg", "color", "depth", "cloud",
                     "valid_points", "total_points", "timestamp"]
@@ -144,8 +146,24 @@ def load_color_camera(capture, ini=None):
 
 
 # ---------------------------------------------------------------------------
-# cleaning summary
+# registration + cleaning summaries
 # ---------------------------------------------------------------------------
+def read_registration(capture):
+    """registration.json with numpy arrays: shots[k]["T"] (4x4 T_shot_to_ref), axis, point,
+    drift_deg; plus by_stem {stem: shot}."""
+    path = Path(capture) / REGISTRATION
+    if not path.is_file():
+        raise DatasetError(f"missing {path} -- run tag_register.py on this capture first")
+    r = json.loads(path.read_text())
+    for s in r["shots"]:
+        s["T"] = np.asarray(s["T_shot_to_ref"], float)
+    ax = r["axis"]
+    for k in ("axis", "point", "drift_deg"):
+        ax[k] = np.asarray(ax[k], float)
+    r["by_stem"] = {s["stem"]: s for s in r["shots"]}
+    return r
+
+
 def read_cleaning(capture):
     path = Path(capture) / CLEANING
     if not path.is_file():

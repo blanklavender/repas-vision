@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 """
-tag_pose_pick.py  --  stitch the cleaned shots of a turntable sweep from AprilTag poses,
-then pick points on the fused plant in a 3D viewer and get their camera coordinates.
+tag_pose_pick.py  --  stitch the cleaned shots of a turntable sweep with their AprilTag
+poses, then pick points on the fused plant in a 3D viewer and get their camera coordinates.
 
-Input is the clean dataset of sam3_data_cleaning.py: one cleaned cloud per shot (colour-
-camera frame). The tags are detected in the ORIGINAL colour images.
+Input: the shot poses and turntable axis of tag_register.py (registration.json) and the
+clean dataset of sam3_data_cleaning.py (one cleaned cloud per shot, colour-camera frame).
+Every cleaned shot is moved into the first shot's frame and voxel-fused (--voxel-mm).
 
-Registration (flora_lib.tags / flora_lib.registration, = tag_pose_register.py "pose"):
-    per adjacent pair, per shared tag   T = P_(i+1) @ P_i^-1      (colour-only PnP tag poses)
-    pair transform                      chordal L2 mean of the per-tag rotations + mean
-                                        tag-centre translation
-    the pairs are chained into the first shot's frame; on a full turn the last->first edge
-    closes the loop and its error is spread evenly over the shots. All shots are then
-    voxel-fused (--voxel-mm).
-
-Plant frame (from the registered poses):
+Plant frame (from the registration):
     z       turntable axis, pointing up
     origin  on that axis, at the pot base (--base-percentile of the cloud's height along z)
     x       horizontal, from the axis toward the reference camera;  y = z cross x
@@ -31,17 +24,18 @@ first shot's angle, i.e. where sweep_capture.py --home-after leaves the plant).
 
     python tag_pose_pick.py ../../captures/femto_bolt/flora_unit/yellow_pot_10-06_deg_10_speed_5
     python tag_pose_pick.py <capture> --points-file ../../picked_points.txt --at-deg 90,180
-    python tag_pose_pick.py <capture> --restitch --max-obliquity 45
+    python tag_pose_pick.py <capture> --restitch --voxel-mm 2
 
-The stitch is cached in <capture>/<--out> and reused while its settings and the cleaning
-run match (--restitch forces a new one).
+The stitch is cached in <capture>/<--out> and reused while its settings, the registration
+and the cleaning run match (--restitch forces a new one).
 
 I/O contract (layout: flora_pipeline/flora_lib/dataset.py)
 ------------
-in   <capture>/manifest.csv, camera_params.json, color_<stem>.png      sweep_capture.py
+in   <capture>/camera_params.json                                      sweep_capture.py
+     <capture>/registration.json                                       tag_register.py
      <capture>/cleaning.json, pointcloud/cloud_<stem>.ply                sam3_data_cleaning.py
 out  <capture>/<--out, default tag_pick>/
-        poses.json         T_shot_to_ref per shot + edges, loop error, settings
+        poses.json         T_shot_to_ref of the fused shots + edges, loop error, settings
         fused.ply          all cleaned shots in the reference shot's colour-camera frame
         plant_frame.json   turntable axis, plant origin and axes (reference camera frame)
         picks.csv          every pick of the last session, camera + plant coordinates
@@ -54,7 +48,6 @@ import json
 import sys
 from pathlib import Path
 
-import cv2
 import numpy as np
 import open3d as o3d
 from open3d.visualization import gui, rendering
@@ -63,33 +56,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "flora_pipeline"))
 from flora_lib import dataset as ds  # noqa: E402
 from flora_lib import geometry as geo  # noqa: E402
 from flora_lib import registration as reg  # noqa: E402
-from flora_lib import tags as tg  # noqa: E402
 
-SETTING_KEYS = ("max_obliquity", "tag_size_mm", "loop", "voxel_mm", "tag_family")
+SETTING_KEYS = ("voxel_mm",)
 
 
 # ---------------------------------------------------------------------------
 # stitching
 # ---------------------------------------------------------------------------
-def stitch(capture, frames, cam, args):
-    """-> poses (T_shot_to_ref), fused points + colours, registration info."""
-    det = tg.make_detector(args.tag_family)
-    tags, P, C = [], [], []
-    for f in frames:
-        gray = cv2.imread(str(capture / ds.color_name(f["stem"])), cv2.IMREAD_GRAYSCALE)
-        t = tg.detect_tags(gray, cam["K"], cam["dist"], det, args.tag_size_mm, args.max_obliquity)
+def stitch(capture, frames, poses, args):
+    """Cleaned clouds of `frames`, moved by `poses` (T_shot_to_ref) -> fused points + colours."""
+    P, C = [], []
+    for f, T in zip(frames, poses):
         pcd = o3d.io.read_point_cloud(str(ds.clean_cloud_path(capture, f["stem"])))
-        tags.append(t)
-        P.append(np.asarray(pcd.points))
+        P.append(geo.apply(T, np.asarray(pcd.points)))
         C.append(np.asarray(pcd.colors))
-        print(f"[SHOT] {f['stem']}  {len(P[-1]):6d} cleaned points, usable tags "
-              f"{sorted(i for i, r in t.items() if r['ok'])}")
-    print()
-    poses, info = reg.chain_sweep(tags, [f["true_deg"] for f in frames], names=[f["stem"] for f in frames],
-                                  loop=args.loop)
-    Pm, Cm = geo.voxel_fuse(np.vstack([geo.apply(T, p) for T, p in zip(poses, P)]), np.vstack(C),
-                            args.voxel_mm / 1000.0)
-    return poses, Pm, np.clip(Cm, 0, 1), info
+        print(f"[SHOT] {f['stem']}  {len(P[-1]):6d} cleaned points")
+    Pm, Cm = geo.voxel_fuse(np.vstack(P), np.vstack(C), args.voxel_mm / 1000.0)
+    return Pm, np.clip(Cm, 0, 1)
+
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -310,11 +297,6 @@ def main():
     ap = argparse.ArgumentParser(description="Tag-pose stitch of a cleaned turntable sweep + 3D point picking",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("capture")
-    ap.add_argument("--max-obliquity", type=float, default=55.0, help="ignore tags seen more obliquely (deg)")
-    ap.add_argument("--tag-size-mm", type=float, default=24.0, help="printed tag size (black square edge)")
-    ap.add_argument("--tag-family", default="tag36h11")
-    ap.add_argument("--loop", choices=["auto", "yes", "no"], default="auto",
-                    help="close the loop last->first (auto: when the sweep covers a full turn)")
     ap.add_argument("--voxel-mm", type=float, default=1.0, help="fused cloud voxel size")
     ap.add_argument("--out", default="tag_pick", help="output sub-folder of the capture")
     ap.add_argument("--restitch", action="store_true", help="ignore a cached stitch")
@@ -337,23 +319,32 @@ def main():
     capture = Path(args.capture)
     try:
         cam = ds.load_color_camera(capture)
+        regn = ds.read_registration(capture)
         cleaning = ds.read_cleaning(capture)
     except ds.DatasetError as e:
         sys.exit(str(e))
-    frames = [f for f in cleaning["frames"] if f["ok"]]
-    skipped = [f["stem"] for f in cleaning["frames"] if not f["ok"]]
+    if cleaning["settings"].get("registration") != regn["finished"]:
+        sys.exit(f"[FAIL] {ds.CLEANING} was made with another registration than {ds.REGISTRATION} -- "
+                 f"run sam3_data_cleaning.py again")
+    frames = [f for f in cleaning["frames"] if f["ok"] and f["stem"] in regn["by_stem"]]
+    rejected = [s["stem"] for s in regn["shots"] if s.get("rejected")]
+    skipped = [f["stem"] for f in cleaning["frames"] if f not in frames and f["stem"] not in rejected]
+    if rejected:
+        print(f"[INFO] {len(rejected)} shots rejected by tag_register.py (rotation off their logged turn): {rejected}")
     if skipped:
         print(f"[WARN] cleaning gave nothing for {skipped} -- stitching without them")
     if len(frames) < 2:
         sys.exit("fewer than 2 cleaned shots")
+    ref = regn["shots"][0]                            # every pose maps into this shot's frame
+    poses = [regn["by_stem"][f["stem"]]["T"] for f in frames]
 
     out = capture / args.out
     out.mkdir(parents=True, exist_ok=True)
     args.points_file = Path(args.points_file) if args.points_file else out / "picked_points.txt"
     if args.report_deg is None:
-        args.report_deg = frames[0]["true_deg"]
+        args.report_deg = ref["true_deg"]
     settings = {k: getattr(args, k) for k in SETTING_KEYS}
-    settings.update(cleaning=cleaning["finished"], stems=[f["stem"] for f in frames])
+    settings.update(registration=regn["finished"], cleaning=cleaning["finished"], stems=[f["stem"] for f in frames])
 
     pose_file, ply_file = out / "poses.json", out / "fused.ply"
     cached = None
@@ -362,45 +353,39 @@ def main():
         if cached.get("settings") != settings:
             print("[CACHE] settings or cleaning changed since the cached stitch -- stitching again")
             cached = None
+    info = regn["registration"]
     if cached:
-        poses = [np.asarray(s["T_shot_to_ref"]) for s in cached["shots"]]
         pcd = o3d.io.read_point_cloud(str(ply_file))
-        info = cached["registration"]
         print(f"[CACHE] reusing the stitch in {out} (--restitch to redo it)")
     else:
-        try:
-            poses, Pm, Cm, info = stitch(capture, frames, cam, args)
-        except reg.RegistrationError as e:
-            sys.exit(f"[FAIL] {e}")
+        Pm, Cm = stitch(capture, frames, poses, args)
         pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(Pm))
         pcd.colors = o3d.utility.Vector3dVector(Cm)
         o3d.io.write_point_cloud(str(ply_file), pcd)
         pose_file.write_text(json.dumps({
             "convention": "X_ref = T_shot_to_ref @ X_shot (metres, colour-camera frames)",
-            "reference_index": frames[0]["index"], "method": "tag_pose_pick:pose", "settings": settings,
+            "reference_index": ref["index"], "method": "tag_register:pose", "settings": settings,
             "registration": info,
             "shots": [dict(index=f["index"], stem=f["stem"], true_deg=f["true_deg"], T_shot_to_ref=T.tolist())
                       for f, T in zip(frames, poses)]}, indent=2))
 
-    try:
-        F = reg.plant_frame(poses, [f["true_deg"] for f in frames], np.asarray(pcd.points), args.base_percentile)
-    except reg.RegistrationError as e:
-        sys.exit(f"[FAIL] {e}")
+    F = reg.plant_frame(regn["axis"], np.asarray(pcd.points), args.base_percentile)
     tilt = np.degrees(np.arccos(np.clip(F["axis"] @ np.array([0.0, -1.0, 0.0]), -1, 1)))
-    dr = np.abs(F["drift_deg"])
-    print(f"\n[CLOUD] {len(pcd.points)} points from {len(frames)} shots, in shot {frames[0]['stem']}'s "
+    dr = np.abs(F["drift_deg"][[not s.get("rejected") for s in regn["shots"]]])
+    print(f"\n[CLOUD] {len(pcd.points)} points from {len(frames)} shots, in shot {ref['stem']}'s "
           f"colour-camera frame")
     if info.get("loop"):
         print(f"[LOOP ] error {info['loop']['error_deg']:.2f} deg / {info['loop']['error_mm']:.1f} mm "
               f"(spread over the loop)")
-    print(f"[POSE ] registered turn vs logged turntable angle: median {np.median(dr):.2f}, max {dr.max():.2f} deg")
+    print(f"[POSE ] registered turn vs logged turntable angle{' (kept shots)' if rejected else ''}: "
+          f"median {np.median(dr):.2f}, max {dr.max():.2f} deg")
     print(f"[PLANT] turntable axis {np.round(F['axis'], 4).tolist()} (camera frame), {tilt:.1f} deg from the "
           f"camera's -y")
     print(f"[PLANT] origin (pot base on the axis) {np.round(F['origin'] * 1000, 1).tolist()} mm; cloud spans "
           f"{F['height_range_mm'][0]:.0f} to {F['height_range_mm'][1]:.0f} mm in height")
     (out / "plant_frame.json").write_text(json.dumps(dict(
         convention="metres, reference colour-camera frame; X_cam = R @ X_plant + origin",
-        reference_stem=frames[0]["stem"], reference_deg=F["ref_deg"], axis=F["axis"].tolist(),
+        reference_stem=ref["stem"], reference_deg=F["ref_deg"], axis=F["axis"].tolist(),
         origin=F["origin"].tolist(), R=F["R"].tolist(), turn_sign=F["turn_sign"],
         base_percentile=args.base_percentile, height_range_mm=F["height_range_mm"]), indent=2))
     print(f"[OUT  ] {out}  (poses.json, fused.ply, plant_frame.json)")
@@ -408,7 +393,7 @@ def main():
     if not args.no_view:
         print(f"\n[VIEW ] Ctrl + left click on the cloud to pick points; close the window when done.\n"
               f"[VIEW ] picked camera coordinates (turntable at {args.report_deg:.1f} deg) -> {args.points_file}")
-        Picker(pcd, F, cam, frames[0]["stem"], args, out, capture).run()
+        Picker(pcd, F, cam, ref["stem"], args, out, capture).run()
         print(f"\n[DONE ] {args.points_file}")
 
 

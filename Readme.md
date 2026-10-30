@@ -139,7 +139,7 @@ Computer vision system for hydroponic plant monitoring using AprilTag-based pose
 
 - `test_camera_status.py` — Tests RealSense camera connection status
 - `supported_stream_list.py` — Lists supported stream configurations
-- `color_640x480_live_streaming.py` — Live color stream preview at 640x480
+- `color_live_streaming.py` — Live color stream preview at 640x480 or 1280x720 (`--res`)
 - `visualize_point_cloud.py` — Point cloud visualization
 - `three_pose_vertical_translation_validation.py` — Validates vertical translation across three poses
 

@@ -12,9 +12,10 @@ name          = "plant"     # capture folder: <name>_<MM-DD>_deg_<step>_speed_<s
 
 [python]
 # interpreter for each step; "" = the one running run_pipeline.py
-capture = ""
-clean   = ""
-pick    = ""
+capture  = ""
+register = ""
+clean    = ""
+pick     = ""
 
 [capture]                   # flora_turntable_control_scripts/sweep_capture.py
 port       = "COM7"         # turntable serial port (Linux: /dev/ttyACM0)
@@ -27,15 +28,16 @@ home_after = true           # re-home after the sweep (plant back as in the firs
 no_ply     = true           # skip the SDK point clouds (not used downstream)
 no_preview = false          # true = no preview windows
 
+[register]                  # femto_bolt_code/3dr_scripts/tag_register.py
+max_obliquity   = 55.0      # ignore tags seen more than this many degrees from head-on
+tag_size_mm     = 24.0
+max_turn_error  = 2.0       # degrees: drop shots whose registered rotation is further off their logged turn; 0 = keep all
+force           = false
+
 [clean]                     # femto_bolt_code/3dr_scripts/sam3_data_cleaning.py
 prompts             = ["yellow cylinder", "green plant"]
 confidence          = 0.5
-z_min               = 0.30  # metres from the camera
-z_max               = 0.45
-x_min               = -0.25
-x_max               = 0.25
-y_min               = -0.25
-y_max               = 0.25
+axis_radius         = 0.06  # metres: keep only points this close to the turntable axis
 grad_max            = 20.0  # mm per px
 occlusion_tol_mm    = 40.0
 occlusion_window_px = 24.0
@@ -45,8 +47,6 @@ sor_std             = 2.0
 force               = false
 
 [pick]                      # femto_bolt_code/3dr_scripts/tag_pose_pick.py
-max_obliquity   = 55.0
-tag_size_mm     = 24.0
 voxel_mm        = 1.0
 base_percentile = 0.5
 at_deg          = ""        # e.g. "90,180": also print coordinates at these turntable angles

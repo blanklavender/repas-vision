@@ -67,7 +67,7 @@ Coordinate System Alignment → Open3D Visualization
 - **`capture_scripts/visualize_ply.py`**: Point cloud visualization
 
 ### Testing & Validation
-- **`testing_scripts/color_640x480_live_streaming.py`**: Live color stream testing
+- **`testing_scripts/color_live_streaming.py`**: Live color stream testing (640x480 or 1280x720); see `testing_scripts/README.md`
 - **`testing_scripts/test_camera_status.py`**: Camera connectivity and status testing
 - **`testing_scripts/three_pose_vertical_translation_validation.py`**: Multi-pose validation
 - **`testing_scripts/visualize_point_cloud.py`**: Point cloud visualization testing
