@@ -94,7 +94,7 @@ def autocast_ctx():
     if torch.cuda.is_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
-        return torch.autocast("cuda", dtype=torch.bfloat16)
+        return torch.autocast("cuda", dtype=(torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16))
     return nullcontext()
 
 
