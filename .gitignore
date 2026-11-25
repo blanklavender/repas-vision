@@ -12,6 +12,7 @@ captures/
 femto_bolt_code/.venv/
 realsense_d415i/.venv-sam3/
 realsense_d415i/.venv/
+flora_pipeline/.venv/
 
 # SEGMENTATION MODELS
 EfficientSAM/
@@ -32,6 +33,9 @@ femto_bolt_code/3dr_scripts/TDFS/debug_0_90_positive.ply
 femto_bolt_code/3dr_scripts/TDFS/debug_4view_colored.ply
 femto_bolt_code/3dr_scripts/TDFS/debug_4view_realcolor.ply
 femto_bolt_code/3dr_scripts/TDFS/alignment_quality_colored.ply
+
+## SDK LOG FILES
+Log/
 
 ## PYTHON CACHE FILES
 femto_bolt_code/3dr_scripts/__pycache__
