@@ -213,7 +213,14 @@ def main():
             color_bgr,
             cv2.resize(depth_vis, (color_bgr.shape[1], color_bgr.shape[0]), interpolation=cv2.INTER_NEAREST)
         ])
-        cv2.imshow('COLOR (left)  |  DEPTH→COLOR colormap (right)', vis)
+        # Preview only: 2560x720 is wider than a 1920px screen, so show a resizable, half-size window.
+        # Saved files are unaffected (full resolution).
+        win = 'COLOR (left) | DEPTH colormap (right)'
+        if not getattr(main, '_win_ready', False):
+            cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(win, vis.shape[1] // 2, vis.shape[0] // 2)
+            main._win_ready = True
+        cv2.imshow(win, vis)
         key = cv2.waitKey(1) & 0xFF
 
         if key in (ord('q'), ESC_KEY):
